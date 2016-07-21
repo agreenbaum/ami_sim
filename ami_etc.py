@@ -10,7 +10,7 @@ import sys, os, argparse
 import numpy as np
 from astropy.io import fits 
 
-import pyami.etc.NIRISSami_apt_calc_v2_JSA as etc
+import pyami.etc.NIRISSami_apt_calc_v3 as etc
 
 def main(argv):
 

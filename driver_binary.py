@@ -34,14 +34,14 @@ def main(argv):
     # JSA: only for development purposes
     
     if 0==1:
-        import pyami.etc.NIRISSami_apt_calc_v2_JSA as etc        
+        import pyami.etc.NIRISSami_apt_calc_v3 as etc        
         import pyami.simcode.make_binary as binsim        
         if ('pyami' in sys.modules):
             import pyami; reload(pyami); 
-            reload(pyami.etc.NIRISSami_apt_calc_v2_JSA);
+            reload(pyami.etc.NIRISSami_apt_calc_v3);
             reload(pyami.simcode.make_binary);
             
-    import pyami.etc.NIRISSami_apt_calc_v2_JSA as etc 
+    import pyami.etc.NIRISSami_apt_calc_v3 as etc 
     import pyami.simcode.utils as U   
     import pyami.simcode.make_binary as binsim        
     
