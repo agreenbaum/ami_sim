@@ -5,6 +5,15 @@
 # 
 # 2016-02-15 Johannes Sahlmann
 # based on ETC and binary simulation codes from Deepashri Thatte and Anand Sivaramakrishnan
+#
+# 2016-09-27 anand@stsci.edu 
+#     Create calibrator observation with same readout as target,  same total flux
+#     Places calibrator at location of first maximum of target (in np.where(tgt==tgt.max()) list)
+#     rework driver_scene to create cal and tgt data cubes
+#     rework make_scene to match reworked make_binary 
+#         (utils create_ramp & create_integration changed,
+#         new up-the-ramp handling to match binary simulation)
+#     name cal and tgt data cubes c_* and t_*
 
 
 import sys, os, argparse
@@ -26,28 +35,22 @@ def main(argv):
     parser.add_argument('-O','--oversample', type=int, help='sky scene oversampling (odd)', choices=range(1,12,2))
     parser.add_argument('-I','--nint', type=int, default=1, help='number of readouts up the ramp (after the zeroth)')
     parser.add_argument('-G','--ngroups', type=int, default=1, help='number of integrations')
+    parser.add_argument('-c','--calibrator', type=int, default=1, help='create calibrator observation yes/no default 1 (yes)', choices=[0,1])
     
     args = parser.parse_args(sys.argv[1:])
 
-    # JSA: only for development purposes
-	    
-    if 0==1:
-        import pyami.simcode.make_scene as scenesim        
-        if ('pyami' in sys.modules):
-            import pyami; reload(pyami)
-            reload(pyami.simcode.make_scene)
-            
     import pyami.simcode.make_scene as scenesim        
     import pyami.simcode.utils as U        
 
     pathname = os.path.dirname(sys.argv[0])
     fullPath = os.path.abspath(pathname)
 
-    targetDir = args.targetDir   #     /astro/projects/JWST/NIRISS/AMI/simulatedData/        
+    targetDir = args.targetDir 
     outDir0 = os.getenv('HOME') + '/' + targetDir;
 
     overwrite = args.overwrite #0;
     uptheramp = args.uptheramp
+    calibrator = args.calibrator
 
     filt = args.filter
     psffile = args.psf
@@ -55,8 +58,8 @@ def main(argv):
     osample = args.oversample
 
     nint = args.nint        # TBD: calculate internally to save the user prep time doing ETC work
-    ngroups = args.oversample  # TBD: calculate internally to save the user prep time doing ETC work
-	# rebin sky_conv_psf image to detector scale, use max of detector array to calculate nint, ngroups, data-collect-time
+    ngroups = args.ngroups  # TBD: calculate internally to save the user prep time doing ETC work
+    # rebin sky_conv_psf image to detector scale, use max of detector array to calculate nint, ngroups, data-collect-time
 
         
     # generate images  
@@ -77,11 +80,13 @@ def main(argv):
         psfdata, psfhdr = fits.getdata(outDir0+psffile, header=True)
         skydata, skyhdr = fits.getdata(outDir0+skyfile, header=True)
         print psfdata.shape, skydata.shape
+
         # Note: to generate a calibration star observation, use a 'delta function' single positive
-        # pixel in an otherwise zero-filled array as your sky fits file.
-        sky_det = outDir+'scene_det_%s.fits'%filt.lower()
-        cubename = skyfile.replace(".fits","__") + psffile
-        
+        # pixel in an otherwise zero-filled array as your sky fits file.  Match total CR in skydata
+        caldata = np.zeros(skydata.shape, np.float64)
+        maxloc = np.where(skydata==skydata.max())
+        caldata[maxloc[0][0], maxloc[1][0]] = skydata.sum()
+
         fov = 80
         dim = fov/2.0
 
@@ -98,21 +103,21 @@ def main(argv):
         x_dith[:] = [(x*osample - osample//2+1) for x in x_dith]
         y_dith[:] = [(y*osample - osample//2+1) for y in y_dith]
 
-        if uptheramp:
+        cubename = "t_" + skyfile.replace(".fits","__") + psffile
+        scenesim.simulate_scenedata(trials, 
+                                    skydata, psfdata, psfhdr, cubename, osample,
+                                    dithers, x_dith, y_dith,
+                                    ngroups, nint, U.tframe, filt,
+                                    outDir, tmpDir, uptheramp)
+
+        if calibrator:
+            cubename = "c_" + skyfile.replace(".fits","__") + psffile
             scenesim.simulate_scenedata(trials, 
-                                        skydata, psfdata, psfhdr, cubename, osample,
+                                        caldata, psfdata, psfhdr, cubename, osample,
                                         dithers, x_dith, y_dith,
                                         ngroups, nint, U.tframe, filt,
-                                        outDir, tmpDir)
-        else: 
-            frametime = ngroups * U.tframe # What is the 'total photon collection time'?
-            ngroups = 1 # and just perform the reset-readout and the final readout
-            scenesim.simulate_scenedata(trials, 
-                                        skydata, psfdata, psfhdr, cubename, osample,
-                                        dithers, x_dith, y_dith,
-                                        ngroups, nint, U.tframe, filt,
-                                        outDir, tmpDir)
-    
+                                        outDir, tmpDir, uptheramp)
+
 if __name__ == "__main__":
     print sys.argv
     main(sys.argv[1:])    
