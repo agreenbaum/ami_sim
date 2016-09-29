@@ -2,12 +2,13 @@ Get the source files for the AMI data simulation programs, e.g.:
 
 > git clone https://github.com/agreenbaum/ami_sim
 
-cd into the ami_sim directory
+> cd ~/ami_sim
 
 You should be able to run three programs:
-
 > python driver_binary.py --help
+
 > python driver_scene.py --help
+
 > python ami_etc.py --help
 
 
@@ -28,16 +29,21 @@ It requires WebbPSF and pysynphot python modules and supporting data files.
 ---------------
 
 > python driver_scene.py -t simulatedData/ -o 0 -utr 0 -f \
-    F430M -p psf.fits -s sky.fits -O 11 -I 10 -G 2
+    F430M -p psf.fits -s sky.fits -O 11 -I 10 -G 2 [-c 0]
     
-> python driver_scene.py -t simulatedData/ -o 0 -utr 0 -f 
-    F430M -p psf.fits -s cal.fits -O 11 -I 10 -G 2
 
-	** Only oversampling of 11 is tested so far - use the flag "-O 11" **
 	
-These will (if needed) create a new directory (~/simulatedData) in your home
-directory which contains the output simulated data file named with your input fits filename roots,  i.e. sky__psf.fits.
+You need to create a directory (eg simulatedData in the above example) in your home directory which contains 
 
+	- the sky scene (eg sky.fits)
+	- the PSF file (eg psf.fits) (PSF.sum = NRM area / full aperture area)
+
+The output "data cube"" files will be named using your input filename,  i.e. 
+	- t_sky__psf.fits  for the target
+	- c_sky__psf.fits for the calibrator (-c flag omitted, or -c 1)
+
+
+** Only oversampling of 11 is tested so far - use the flag "-O 11" **
 
 NOTES: 
 	sky.fits must be square, and an odd number (<80) of 65 mas detector pixels on a side
@@ -69,5 +75,5 @@ This will report exposure parameters for the Astronomer's Proposal Tool (APT) an
 
 
 
-Maintainers (in alphabetic order): Greenbaum, Sahlmann, Sivaramakrishnan, Thatte
+Maintainers: Deepashri Thatte, Anand Sivaramakrishnan, Johannes Sahlmann, Alexandra Greenbaum
 

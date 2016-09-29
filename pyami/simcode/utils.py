@@ -7,27 +7,44 @@
 """
 
 import numpy as np
+import sys
+from astropy.io import fits
 
 cdsreadnoise = 21.0                      # CDS read noise (e-)
 readnoise = cdsreadnoise/np.sqrt(2)      # read noise for one frame
-darkcurrent = 0.012                      # 0.012 e-/sec 
+                                         # 0.012 e-/sec  value used until 09 2016
+darkcurrent = 0.462*0.15*1.75            # ~0.12 e-/sec 09/2016, 10x earlier, still 6e- in max 800 frames
+                                         # Kevin Volk via Deepashri Thatte
 background = 0.125                       # 0.125 e-/sec 
 ips_size = 256                           # holdover from before AMISUB became 80x80
 flat_sigma = 0.001                       # flat field error
 pixscl = 0.065                           # arcsec/pixel WebbPSF 0.064 - DL 0.065
 tframe = 0.0745                          # frame time for NISRAPID on AMI SUB80
 amisubfov = 80
-dither_stddev_as = 0.015                 # 15 mas placement error one-axis
-jitter_stddev_as = 0.007                 # 7 mas level 2 reqt on JWST, arcsec
+
+#ither_stddev_as = 0.0015                 # 15 mas placement error one-axis
+#itter_stddev_as = 0.007                 # 7 mas level 2 reqt on JWST, arcsec,
+
+#ither_stddev_as = 0.0015                # Anand Alex detectionlimits
+#itter_stddev_as = 0.0001                # Anand Alex centering  Also for Stefenie test reductiondetectionlimits
+
+dither_stddev_as = 0.005                 # Goudfrooij Sep 2 2016 email to anand@ - good to SAMs of 30 arcsec
+jitter_stddev_as = 0.001                 # NEA ~1mas jitter FGS, plus other slower error, Kevin 2016.09.16
+                                         # Post-flight determination required for more realism in simulations...
+                                         # In practise expert reduction should do rapid centroiding
+                                         # (as in Holfeltz et al. TRs) through all integrations to 
+                                         # determine the level of jitter, and calculate CPs in reasonable
+                                         # subsets of these integrations.  
 
 # Anand's email 2016-02-10
 F277W, F380M, F430M, F480M = ("F277W", "F380M", "F430M", "F480M")
 ZP = {F277W: 26.14,  
       F380M: 23.75,
       F430M: 23.32,
-      F480M: 23.19}
+      F480M: 23.19} # replace w/Neil R.'s values consistent w/ STScI 
 
 
+debug_utils = False
 
 
 # fast rebin Klaus Pontooppidan found on the web
@@ -56,27 +73,107 @@ def jitter(no_of_jitters, osample):
     return xjit_r, yjit_r
 
 
-def create_ramp(array, _fov, ngroups, frametime):
-    nreadouts = ngroups + 1
-    readnoise_cube = np.zeros((nreadouts,int(_fov),int(_fov)), np.float64)
-    poisson_noise_cube = np.zeros((nreadouts,int(_fov),int(_fov)), np.float64)
-    cumulative_poisson_noise_cube = np.zeros((nreadouts,int(_fov),int(_fov)), np.float64)
-    ramp=np.zeros((nreadouts,int(_fov),int(_fov)), np.float64)
+def create_ramp(countspersec, _fov, ngroups, utr_):
+    """ 
+       input counts per second
+       output: ramp has ngroups+1 slices, units are detected e- + noise
+       create_ramp() called nint number of times to provide nint ramps
+   """
+    if utr_ :
+        nreadouts = ngroups + 1
+        timestep = tframe
+    else:
+        nreadouts = 3
+        timestep = (ngroups-1) * tframe
 
-    for i in range(nreadouts):
-        #calculate poisson noise for single reads, then calculate poisson noise for reads up-the-ramp
-        if i == 0:
-            poisson_noise_cube[i,:,:] = 0.0
+    readnoise_cube                = np.zeros((nreadouts,int(_fov),int(_fov)), np.float64)
+    background_cube               = np.zeros((nreadouts,int(_fov),int(_fov)), np.float64)
+    dark_cube                     = np.zeros((nreadouts,int(_fov),int(_fov)), np.float64)
+    poisson_noise_cube            = np.zeros((nreadouts,int(_fov),int(_fov)), np.float64)
+    cumulative_poisson_noise_cube = np.zeros((nreadouts,int(_fov),int(_fov)), np.float64)
+    ramp                          = np.zeros((nreadouts,int(_fov),int(_fov)), np.float64)
+
+    if debug_utils:
+        print "\tcreate_ramp(): ngroups", ngroups, 
+        print "  countspersec.sum() = %.2e"%countspersec.sum(), 
+        print "  countsperframe = %.2e"%(countspersec.sum()*tframe)
+
+    #calculate poisson noise for single reads, then calculate poisson noise for reads up-the-ramp
+    for iread in range(nreadouts):
+
+        if iread == 0:
+            readnoise_cube[iread,:,:] = np.random.normal(0, readnoise, (int(_fov),int(_fov))) 
+            ramp[iread,:,:] = readnoise_cube[iread,:,:].mean()
+            if debug_utils:
+                print "\t\tpoissoncube slice %2d:  %.2e"%(iread, poisson_noise_cube[iread,:,:].sum()),
+                print "poissoncube total %.2e"%poisson_noise_cube.sum()
+
+        elif iread == 1:
+            photonexpectation = countspersec * tframe
+            photonexpectation[photonexpectation <0.0] = 0.0  # catch roundoff to e-13
+            poisson_noise_cube[iread,:,:] = np.random.poisson(photonexpectation) # expose for tframe
+            background_cube[iread,:,:] =  background * tframe
+            dark_cube[iread,:,:] =  darkcurrent * tframe
+            readnoise_cube[iread,:,:] = np.random.normal(0, readnoise, (int(_fov),int(_fov))) 
+            ramp[iread,:,:] = ramp[iread-1,:,:] + \
+                          poisson_noise_cube[iread,:,:] + \
+                          dark_cube[iread,:,:] + \
+                          readnoise_cube[iread,:,:]
+            if debug_utils:
+                print "\t\tpoissoncube slice %2d:  %.2e"%(iread, poisson_noise_cube[iread,:,:].sum()),
+                print "poissoncube total %.2e"%poisson_noise_cube.sum()
+
         else:
-            poisson_noise_cube[i,:,:] = np.random.poisson(array)
-        cumulative_poisson_noise_cube = np.cumsum(poisson_noise_cube, axis=0)
-        readnoise_array = np.random.normal(0, readnoise, (int(_fov),int(_fov)))
-        readnoise_cube[i,:,:] = readnoise_array
-        ramp = cumulative_poisson_noise_cube + readnoise_cube + darkcurrent*frametime*i + background*frametime*i
+            photonexpectation = countspersec * timestep
+            photonexpectation[photonexpectation <0.0] = 0.0
+            poisson_noise_cube[iread,:,:] = np.random.poisson(photonexpectation) # expose for tframe or (ng-1)*tframe
+            background_cube[iread,:,:] =  background * timestep
+            dark_cube[iread,:,:] =  darkcurrent * timestep
+            readnoise_cube[iread,:,:] = np.random.normal(0, readnoise, (int(_fov),int(_fov))) 
+            ramp[iread,:,:] = ramp[iread-1,:,:] + \
+                          poisson_noise_cube[iread,:,:] + \
+                          dark_cube[iread,:,:] + \
+                          readnoise_cube[iread,:,:]
+            if debug_utils:
+                print "\t\tpoissoncube slice %2d:  %.2e"%(iread, poisson_noise_cube[iread,:,:].sum()),
+                print "poissoncube total %.2e"%poisson_noise_cube.sum()
+
+
+
+    if debug_utils:
+        s = "%.1e"
+        print "\tpoissoncube total = %.1e" % poisson_noise_cube.sum() # requested nphot / nint
+        print "\tramp last slice total = %.1e" % ramp[-1,:,:].sum()   # approx same as above
+        #print "\tramp last slice peak = %.1e" % ramp[-1,:,:].max() #should be ~sat_e typically
+        for i in range(ramp.shape[0]):
+            print "\t", s%ramp[i,:,:].sum(), ":", s%ramp[i,:,:].max(),
+        print "\n\tcreate_ramp: end"
+
     return ramp
 
 
-def create_exposure(utr, ngroups, fov):
+def create_integration(ramp): #????????
+    """
+	input: ramp in  e-, including 'zero read', ngroups+1 2D slices
+	output: data in detected e-
+    """
+
+    if debug_utils:
+        s = "%.1e"
+        for i in range(ramp.shape[0]):
+            print " ", s%ramp[i,:,:].sum(),
+        print "\n\tcreate_integration: end"
+
+    if ramp.shape[0] == 2:
+        data = ramp[1,:,:] - ramp[0,:,:]
+    if ramp.shape[0] > 2:
+        data = ramp[-1,:,:] - ramp[1,:,:]
+    return data
+
+
+# old, now ...unused.. 09/2016
+"""
+def find_slope(utr, ngroups, fov):
     xval = np.zeros((ngroups+1,int(fov),int(fov)), np.float64)
     slope = np.zeros((int(fov),int(fov)), np.float64)
     for i in range(ngroups+1):
@@ -84,6 +181,7 @@ def create_exposure(utr, ngroups, fov):
     xm=float(ngroups)/2.0
     slope = (np.sum(xval*utr,axis=0)-xm*np.sum(utr,axis=0))/(np.sum(xval**2,axis=0)-ngroups*xm**2)
     return slope
+"""
 
 
 #origin is at bottom left of the image. (ds9?)
