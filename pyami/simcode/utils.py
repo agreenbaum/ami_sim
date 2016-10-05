@@ -83,8 +83,11 @@ def create_ramp(countspersec, _fov, ngroups, utr_):
         nreadouts = ngroups + 1
         timestep = tframe
     else:
-        nreadouts = 3
-        timestep = (ngroups-1) * tframe
+        if ngroups > 1:
+            nreadouts = 3
+            timestep = (ngroups-1) * tframe
+        else:
+            nreadouts = 2
 
     readnoise_cube                = np.zeros((nreadouts,int(_fov),int(_fov)), np.float64)
     background_cube               = np.zeros((nreadouts,int(_fov),int(_fov)), np.float64)
@@ -165,7 +168,7 @@ def create_integration(ramp): #????????
         print "\n\tcreate_integration: end"
 
     if ramp.shape[0] == 2:
-        data = ramp[1,:,:] - ramp[0,:,:]
+        data = ramp[1,:,:] # no subtraction on readnoise+DC - ramp[0,:,:]
     if ramp.shape[0] > 2:
         data = ramp[-1,:,:] - ramp[1,:,:]
     return data
