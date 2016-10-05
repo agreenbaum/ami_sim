@@ -74,10 +74,11 @@ def main(argv, debug=False):
         report, params = etc.generatePSF(filt=filt, fov=31, osample=3, cr=etc.cr_from_mag(mag_t, U.ZP[filt]), tot_e=tot_e, sat_e=sat_e, SRC = sptype, return_params=1, DATADIR=pyamiDataDir)
         ngroups, nint, nint_ceil = params;
         print report
-        print "\tTarget magnitude is %.2f, total  number of detected photons is %.0e\n" % (MAG_T, TOT_E)
+        print "\tTarget magnitude is %.2f, total  number of detected photons is %.1e\n" % (MAG_T, TOT_E)
 
         #----------------------
         if debug:
+            """
             print "debug: 21 Sep 2016 DT/AS ... "
             print "debug: request 6th mag, 2e7 photons,nint, ngroup = 14, 19"
             #print "debug: python driver_binary.py F430M 6.0 2e7 -t simulatedData/ -o 1 -fr 0.16 -dx 2.0 -dy 2.0 -utr"
@@ -85,6 +86,13 @@ def main(argv, debug=False):
             mag_t = 6.0
             filt = "F430M"
             fluxratio = 0.16
+            """
+            """ 2016.10.05 - adjust to get ngroups=3, then make ngroups 4, testing for 
+                'lost' photons from first frame.
+            python driver_binary.py F430M 3.95163 4.704e6 -t sim_0.1fr/ -o 1 -fr 0.1 -dx 2.0 -dy 2.0 -utr 1 -O 11
+            
+			"""
+            ngroups = ngroups + 1
         #----------------------
 			
         
@@ -172,6 +180,13 @@ def main(argv, debug=False):
             binsim.simulate_skydata(trials, calstar_array   , "ccube", dithers, x_dith, y_dith, ngroups, nint_ceil,
                 filt=filt, outDir = outDir, tmpDir=tmpDir, **kwargs)
 
+            print """
+	The number of e- in the data cube may be less than the requested number of photons (%.2e) for
+	bright objects by up to a fraction ~1/ngroups of the requested number.  This is because
+	of complications due to missing the RESET-READ frame in downlinked data.
+	Increase the requested number of photons  until your data cube contains the required
+	number of photons.
+	""" % tot_e
 
     
 if __name__ == "__main__":
