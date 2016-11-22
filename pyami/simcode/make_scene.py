@@ -180,7 +180,7 @@ def simulate_scenedata( _trials,
                 ramp = U.create_ramp(counts_array_persec, fov, ngroups, utr)
                 #fits.writeto('ramp.fits',ramp, clobber = True)
 
-                pflat = np.random.normal(1.0, U.flat_sigma, size=(fov,fov))
+                pflat = U.get_flatfield((fov,fov))
                 exposure = U.create_integration(ramp)
                 exposure1 = (exposure - U.darkcurrent - U.background) * pflat
 
