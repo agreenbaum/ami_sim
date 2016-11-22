@@ -189,6 +189,11 @@ def simulate_scenedata( _trials,
                     print '\t\tmax pixel counts', cube[k,:,:].max()
                     print " "                   
   
+            """
+            print '\t_cubename', _cubename
+            print '\tstr(p)', str(p), 
+            print '\tstr(i)', str(i)
+            """
             outfile = _cubename+str(p)+str(i)+".fits"
             print '\tcreating', _cubename+str(p)+str(i)+'.fits'
 
