@@ -119,8 +119,6 @@ def main(argv):
 
         if calibrator:
             cubename = "c_" + skyfile.replace(".fits","__") + psffile
-            caldata = psfdata.copy() / psfdata.sum()  # normailze psf to total 1
-            caldata = caldata * countrate
             scenesim.simulate_scenedata(trials, 
                                         caldata, psfdata, psfhdr, cubename, osample,
                                         dithers, x_dith, y_dith,
