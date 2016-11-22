@@ -31,11 +31,12 @@ def main(argv):
     parser.add_argument('-utr','--uptheramp',  type=int, default='0', help='generate up-the-ramp fits file? yes/no, default 0 (no)', choices=[0,1])
     parser.add_argument('-f', '--filter', type=str, help='filter name (upper/lower case)', choices=["F277W", "F380M", "F430M", "F480M"])
     parser.add_argument('-p','--psf', type=str, help='oversampled PSF fits file. Spectral type set in this')
-    parser.add_argument('-s','--sky', type=str, help='oversampled sky scene fits file, countrate per sec, A=25m^2 in the filter')
+    parser.add_argument('-s','--sky', type=str, help='oversampled sky scene fits file, normalized to sum to unity')
     parser.add_argument('-O','--oversample', type=int, help='sky scene oversampling (odd)', choices=range(1,12,2))
     parser.add_argument('-I','--nint', type=int, default=1, help='number of readouts up the ramp (after the zeroth)')
     parser.add_argument('-G','--ngroups', type=int, default=1, help='number of integrations')
     parser.add_argument('-c','--calibrator', type=int, default=1, help='create calibrator observation yes/no default 1 (yes)', choices=[0,1])
+    parser.add_argument('-cr','--countrate', type=float, help='Photon count rate on 25m^2 per sec in the bandpass (CRclearp in ami_etc output)',)
     
     args = parser.parse_args(sys.argv[1:])
 
@@ -51,6 +52,9 @@ def main(argv):
     overwrite = args.overwrite #0;
     uptheramp = args.uptheramp
     calibrator = args.calibrator
+
+    print "countrate input as %.2e photons/sec on 25m^2 primary in filter bandpass" % args.countrate
+    countrate = args.countrate
 
     filt = args.filter
     psffile = args.psf
@@ -79,7 +83,9 @@ def main(argv):
         # File sizes: 
         psfdata, psfhdr = fits.getdata(outDir0+psffile, header=True)
         skydata, skyhdr = fits.getdata(outDir0+skyfile, header=True)
-        print psfdata.shape, skydata.shape
+        skydata = skydata * countrate
+        print "psfdata", psfdata.shape, "totals %.2e"%psfdata.sum()
+        print "skydata", skydata.shape, "totals %.2e"%skydata.sum()
 
         # Note: to generate a calibration star observation, use a 'delta function' single positive
         # pixel in an otherwise zero-filled array as your sky fits file.  Match total CR in skydata
