@@ -83,9 +83,10 @@ def main(argv):
         # File sizes: 
         psfdata, psfhdr = fits.getdata(outDir0+psffile, header=True)
         skydata, skyhdr = fits.getdata(outDir0+skyfile, header=True)
+        skydata = skydata / skydata.sum()
         skydata = skydata * countrate
-        print "psfdata", psfdata.shape, "totals %.2e"%psfdata.sum()
-        print "skydata", skydata.shape, "totals %.2e"%skydata.sum()
+        print "psfdata", psfdata.shape, "totals %.2e (NRM throughput / full aperture throughput)"%psfdata.sum()
+        print "skydata", skydata.shape, "totals %.2e (photons / s on 25^m in band)"%skydata.sum()
 
         # Note: to generate a calibration star observation, use a 'delta function' single positive
         # pixel in an otherwise zero-filled array as your sky fits file.  Match total CR in skydata
@@ -118,6 +119,8 @@ def main(argv):
 
         if calibrator:
             cubename = "c_" + skyfile.replace(".fits","__") + psffile
+            caldata = psfdata.copy() / psfdata.sum()  # normailze psf to total 1
+            caldata = caldata * countrate
             scenesim.simulate_scenedata(trials, 
                                         caldata, psfdata, psfhdr, cubename, osample,
                                         dithers, x_dith, y_dith,
