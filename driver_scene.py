@@ -33,8 +33,8 @@ def main(argv):
     parser.add_argument('-p','--psf', type=str, help='oversampled PSF fits file. Spectral type set in this')
     parser.add_argument('-s','--sky', type=str, help='oversampled sky scene fits file, normalized to sum to unity')
     parser.add_argument('-O','--oversample', type=int, help='sky scene oversampling (odd)', choices=range(1,12,2))
-    parser.add_argument('-I','--nint', type=int, default=1, help='number of readouts up the ramp (after the zeroth)')
-    parser.add_argument('-G','--ngroups', type=int, default=1, help='number of integrations')
+    parser.add_argument('-I','--nint', type=int, default=1, help='number of integrations (IR community calls these exposures sometimes)')
+    parser.add_argument('-G','--ngroups', type=int, default=1, help='number of up-the-ramp readouts')
     parser.add_argument('-c','--calibrator', type=int, default=1, help='create calibrator observation yes/no default 1 (yes)', choices=[0,1])
     parser.add_argument('-cr','--countrate', type=float, help='Photon count rate on 25m^2 per sec in the bandpass (CRclearp in ami_etc output)',)
     
