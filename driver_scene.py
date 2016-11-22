@@ -94,8 +94,8 @@ def main(argv):
         maxloc = np.where(skydata==skydata.max())
         caldata[maxloc[0][0], maxloc[1][0]] = skydata.sum()
 
-        fov = 80
-        dim = fov/2.0
+		""" fov = 80
+        dim = fov/2.0 """
 
         
         # --
