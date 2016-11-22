@@ -61,7 +61,7 @@ def get_flatfield(detshape):
     ffe_file = pyamiDataDir +'flat_%dx%d_sigma_%.4f.fits'%(detshape[0],detshape[1],flat_sigma)
 
     if os.access(ffe_file, os.F_OK) == True:
-        print "using existing flat field file %s" % ffe_file
+        #print "\tflat field file %s" % ffe_file
         pflat = fits.getdata(ffe_file)
     else:
         pflat = np.random.normal(1.0, flat_sigma, size=detshape)
