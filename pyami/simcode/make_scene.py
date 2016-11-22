@@ -17,6 +17,8 @@ background = 0.125                       #0.125 e-/sec
 ips_size = 256                           #holdover from before AMISUB became 80x80, maybe fix later
 flat_sigma = 0.001                       #flat field error
 pixscl = 0.065 #arcsec/pixel - pixel scale used by DL
+
+Using 'integration' instead of 'exposure'. In the previous versions of this code integration used to be called exposure.
 """
 
 
@@ -181,10 +183,10 @@ def simulate_scenedata( _trials,
                 #fits.writeto('ramp.fits',ramp, clobber = True)
 
                 pflat = U.get_flatfield((fov,fov))
-                exposure = U.create_integration(ramp)
-                exposure1 = (exposure - U.darkcurrent - U.background) * pflat
+                integration = U.create_integration(ramp)
+                integration1 = (integration - U.darkcurrent - U.background) * pflat
 
-                cube[k,:,:] = exposure1     
+                cube[k,:,:] = integration1     
                 if 0:
                     print '\t\tmax pixel counts', cube[k,:,:].max()
                     print " "                   
