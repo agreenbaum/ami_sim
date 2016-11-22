@@ -29,13 +29,13 @@ It requires WebbPSF and pysynphot python modules and supporting data files.
 ---------------
 
 > python driver_scene.py -t simulatedData/ -o 0 -utr 0 -f \
-    F430M -p psf.fits -s sky.fits -O 11 -I 10 -G 2 [-c 0]
+    F430M -p psf.fits -s sky.fits -O 11 -I 10 -G 2 [-c 0]  -cr 2.1e6
     
 
 	
 You need to create a directory (eg simulatedData in the above example) in your home directory which contains 
 
-	- the sky scene (eg sky.fits)
+	- the sky scene (eg sky.fits, normalized on-the-fly to cr in photons/s on 25m^2 in filter bandpass)
 	- the PSF file (eg psf.fits) (PSF.sum = NRM area / full aperture area)
 
 The output "data cube"" files will be named using your input filename,  i.e. 
@@ -44,6 +44,7 @@ The output "data cube"" files will be named using your input filename,  i.e.
 
 
 ** Only oversampling of 11 is tested so far - use the flag "-O 11" **
+** Oversampling 5 testing in progress **
 
 NOTES: 
 	sky.fits must be square, and an odd number (<80) of 65 mas detector pixels on a side
@@ -54,6 +55,16 @@ NOTES:
 	The user chooses NINT and NGROUP.  The accompanying ETC can estimate operational values, or choose your own.
 		NGROUP+1 is the number of detector readouts up the ramp
 		NINT is the number of full ramps
+
+The following two commands simulate a binary companion without a disk (user-created sky scene) and a binary companion with a disk (also user-created sky scene sky scene).  Both simulations generate a calibrator observation also ("c_*.fits").  For the -cr (--countrate) parameter, use the "CRclearp"" number that ami_etc.py gives you for a given point source target magnitude and filter.
+
+	> python driver_scene.py -t simDataLkCa15/bin/ -o 0 -utr 0 -f F430M \
+          -p PSF_5x_MASK_NRM_F430M_opd162_3_A0V.fits -s binary_cr0.01_pa0.0.fits \
+          -O 5 -I 3 -G 30 -utr 0 -c 1 -cr 3e6
+
+	> python driver_scene.py -t simDataLkCa15/bnd/ -o 0 -utr 0 -f F430M \
+          -p PSF_5x_MASK_NRM_F430M_opd162_3_A0V.fits -s binaryanddisk_cr0.01_pa0.0.fits \
+          -O 5 -I 3 -G 30 -utr 0 -c 1 -cr 3e6
 
 
 # ami_etc  -   ETC script
