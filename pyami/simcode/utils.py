@@ -7,8 +7,9 @@
 """
 
 import numpy as np
-import sys
+import sys, time
 from astropy.io import fits
+import os
 
 cdsreadnoise = 21.0                      # CDS read noise (e-)
 readnoise = cdsreadnoise/np.sqrt(2)      # read noise for one frame
@@ -29,7 +30,7 @@ amisubfov = 80
 #itter_stddev_as = 0.0001                # Anand Alex centering  Also for Stefenie test reductiondetectionlimits
 
 dither_stddev_as = 0.005                 # Goudfrooij Sep 2 2016 email to anand@ - good to SAMs of 30 arcsec
-jitter_stddev_as = 0.001                 # NEA ~1mas jitter FGS, plus other slower error, Kevin 2016.09.16
+jitter_stddev_as = 0.004                 # NEA ~1mas jitter FGS, plus other slower error, Kevin 2016.09.16
                                          # Post-flight determination required for more realism in simulations...
                                          # In practise expert reduction should do rapid centroiding
                                          # (as in Holfeltz et al. TRs) through all integrations to 
@@ -46,6 +47,42 @@ ZP = {F277W: 26.14,
 
 debug_utils = False
 
+def get_flatfield(detshape):
+    """
+    Read in a flat field that possesses the requested flat field error standard deviation, 
+    or if the file does not exist, create, write, and return it 
+    """
+
+    pathname = os.path.dirname(sys.argv[0])
+    fullPath = os.path.abspath(pathname)
+    pyamiDataDir = fullPath + '/pyami/etc/NIRISSami_apt_calcPSF/'
+
+
+    ffe_file = pyamiDataDir +'flat_%dx%d_sigma_%.4f.fits'%(detshape[0],detshape[1],flat_sigma)
+
+    if os.access(ffe_file, os.F_OK) == True:
+        print "using existing flat field file %s" % ffe_file
+        pflat = fits.getdata(ffe_file)
+    else:
+        pflat = np.random.normal(1.0, flat_sigma, size=detshape)
+        print "creating flat field and saving it to  file %s" % ffe_file
+
+        (year, month, day, hour, minute, second, weekday, DOY, DST) =  time.gmtime()
+
+        fitsobj = fits.HDUList()
+        hdu = fits.PrimaryHDU()
+        hdu.header['DATE'] = '%4d-%02d-%02dT%02d:%02d:%02d' % \
+                  (year, month, day, hour, minute, second), 'Date of calculation'
+        hdu.header['AUTHOR'] = '%s@%s' % (os.getenv('USER'), os.getenv('HOST')), \
+                  'username@host for calculation'
+
+        hdu.data = pflat
+
+        fitsobj.append( hdu )
+        fitsobj.writeto(ffe_file) # no clobber
+        fitsobj.close()
+
+    return pflat
 
 # fast rebin Klaus Pontooppidan found on the web
 def krebin(a, shape):
@@ -157,8 +194,8 @@ def create_ramp(countspersec, _fov, ngroups, utr_):
 
 def create_integration(ramp): #????????
     """
-	input: ramp in  e-, including 'zero read', ngroups+1 2D slices
-	output: data in detected e-
+    input: ramp in  e-, including 'zero read', ngroups+1 2D slices
+    output: data in detected e-
     """
 
     if debug_utils:
