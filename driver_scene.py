@@ -83,18 +83,38 @@ def main(argv):
         # File sizes: 
         psfdata, psfhdr = fits.getdata(outDir0+psffile, header=True)
         skydata, skyhdr = fits.getdata(outDir0+skyfile, header=True)
-        skydata = skydata / skydata.sum()
+        skydata = skydata / skydata.sum()  # normalize sky data total to unity!
         skydata = skydata * countrate
         print "psfdata", psfdata.shape, "totals %.2e (NRM throughput / full aperture throughput)"%psfdata.sum()
         print "skydata", skydata.shape, "totals %.2e (photons / s on 25^m in band)"%skydata.sum()
 
         # Note: to generate a calibration star observation, use a 'delta function' single positive
-        # pixel in an otherwise zero-filled array as your sky fits file.  Match total CR in skydata
+        # pixel in an otherwise zero-filled array as your sky fits file.  No longer do we m
+        # match total CR in skydata, but we match the CR to that of the dominant point source
+        # in skydata.  Thus if the skydata point source accounts for 0.99 of the skydata array 
+        # then we place a unit delta function into caldata, and request a count rate of 
+        # 0.99 * the user-requested count rate when creating calibrator data.
+        # WARNING - WE ASSUME A SINGLE DOMINANT POINT SOURCE IN THE SKY DATA.
+
         caldata = np.zeros(skydata.shape, np.float64)
         maxloc = np.where(skydata==skydata.max())
-        caldata[maxloc[0][0], maxloc[1][0]] = skydata.sum()
+        ptsrcfraction = skydata[maxloc]/skydata.sum()
+        #print maxloc, ptsrcfraction
+        caldata[maxloc[0][0], maxloc[1][0]] = ptsrcfraction * countrate
+        #print "caldata[maxloc],  skydata[maxloc], ratio: ",  (caldata[maxloc],  skydata[maxloc], 
+        print """
 
-		""" fov = 80
+          We match the CR to that of the dominant point source in skydata.
+          Thus if the skydata point source accounts for 0.99 of of target flux,
+          then we place a unit delta function into caldata, and request a count
+          rate of 0.99 * the user-requested count rate for creating calibrator
+          data.  
+          
+          WARNING - WE ASSUME A SINGLE DOMINANT POINT SOURCE IN THE SKY DATA.  
+
+          """
+
+        """ fov = 80
         dim = fov/2.0 """
 
         
