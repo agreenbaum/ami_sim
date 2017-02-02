@@ -22,6 +22,7 @@ flat_sigma = 0.001                       # flat field error
 pixscl = 0.065                           # arcsec/pixel WebbPSF 0.064 - DL 0.065
 tframe = 0.0745                          # frame time for NISRAPID on AMI SUB80
 amisubfov = 80
+SAT_E = 72.0e3                           # Fullerton December 20, 2016 e-mail. Also consistent with STScI JWST ETC
 
 #ither_stddev_as = 0.0015                 # 15 mas placement error one-axis
 #itter_stddev_as = 0.007                 # 7 mas level 2 reqt on JWST, arcsec,
@@ -37,7 +38,7 @@ jitter_stddev_as = 0.004                 # NEA ~1mas jitter FGS, plus other slow
                                          # determine the level of jitter, and calculate CPs in reasonable
                                          # subsets of these integrations.  
 
-# Anand's email 2016-02-10
+# Anand's email 2016-02-10 orginally from Volk
 F277W, F380M, F430M, F480M = ("F277W", "F380M", "F430M", "F480M")
 ZP = {F277W: 26.14,  
       F380M: 23.75,

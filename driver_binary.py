@@ -9,7 +9,8 @@
 
 import sys, os, argparse
 import numpy as np
-from astropy.io import fits 
+from astropy.io import fits
+import pyami.simcode.utils as U
 
 
 def main(argv, debug=False):
@@ -51,7 +52,6 @@ def main(argv, debug=False):
     # ETC inputs
     MAG_T  = args.targetMagnitude; #11.0
     TOT_E = args.totalElectrons; # 1e6
-    SAT_E = 35.0e3
     
     filt = args.filt
     sptype = args.spectralType
@@ -69,7 +69,7 @@ def main(argv, debug=False):
         #   run ETC prototype
         mag_t = MAG_T
         tot_e = TOT_E
-        sat_e = SAT_E
+        sat_e = U.SAT_E
 
         report, params = etc.generatePSF(filt=filt, fov=31, osample=3, cr=etc.cr_from_mag(mag_t, U.ZP[filt]), tot_e=tot_e, sat_e=sat_e, SRC = sptype, return_params=1, DATADIR=pyamiDataDir)
         ngroups, nint, nint_ceil = params;
