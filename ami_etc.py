@@ -8,7 +8,8 @@
 
 import sys, os, argparse
 import numpy as np
-from astropy.io import fits 
+from astropy.io import fits
+import pyami.simcode.utils as U
 
 import pyami.etc.NIRISSami_apt_calc_v3 as etc
 
@@ -36,24 +37,16 @@ def main(argv):
     # ETC inputs
     MAG_T  = args.targetMagnitude; #11.0
     TOT_E = args.totalElectrons; # 1e6
-    SAT_E = 35e3
     
     filt = args.filt.upper()
     sptype = args.spectralType
 
-    # Anand's email 2016-02-10 orginally from Volk
-    F277W, F380M, F430M, F480M = ("F277W", "F380M", "F430M", "F480M")
-    ZP = {F277W: 26.14,  
-          F380M: 23.75,
-          F430M: 23.32,
-          F480M: 23.19}
 
-
-     #  run ETC prototype
+    #  run ETC prototype
     mag_t = MAG_T
     tot_e = TOT_E
-    sat_e = SAT_E
-    report, params = etc.generatePSF(filt=filt, fov=31, osample=3, cr=etc.cr_from_mag(mag_t, ZP[filt]), \
+    sat_e = U.SAT_E
+    report, params = etc.generatePSF(filt=filt, fov=31, osample=3, cr=etc.cr_from_mag(mag_t, U.ZP[filt]), \
                                       tot_e=tot_e, sat_e=sat_e, SRC = sptype, return_params=1,\
                                       DATADIR=pyamiDataDir)
     ngroups, nint, nint_ceil = params # not needed here...
