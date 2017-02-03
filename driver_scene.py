@@ -20,6 +20,9 @@ import sys, os, argparse
 import numpy as np
 from astropy.io import fits 
 
+import pyami.simcode.make_scene as scenesim        
+import pyami.simcode.utils as U        
+
 
 def main(argv):
 
@@ -37,11 +40,9 @@ def main(argv):
     parser.add_argument('-G','--ngroups', type=int, default=1, help='number of up-the-ramp readouts')
     parser.add_argument('-c','--calibrator', type=int, default=1, help='create calibrator observation yes/no default 1 (yes)', choices=[0,1])
     parser.add_argument('-cr','--countrate', type=float, help='Photon count rate on 25m^2 per sec in the bandpass (CRclearp in ami_etc output)',)
+    parser.add_argument('-tag','--tag', type=str, help='Tag to include in the names of the produced files',)
     
-    args = parser.parse_args(sys.argv[1:])
-
-    import pyami.simcode.make_scene as scenesim        
-    import pyami.simcode.utils as U        
+    args = parser.parse_args(argv)
 
     pathname = os.path.dirname(sys.argv[0])
     fullPath = os.path.abspath(pathname)
@@ -147,7 +148,6 @@ def main(argv):
 
 if __name__ == "__main__":
     print sys.argv
-    main(sys.argv[1:])    
-    
-sys.exit(0)
+    main(sys.argv[1:])        
+	sys.exit(0)
 
