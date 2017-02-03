@@ -24,15 +24,15 @@ Using 'integration' instead of 'exposure'. In the previous versions of this code
 
 def adjustsizes(skyov, psfov, ov):
     """
-	skyov is 'infinite resolution'.  PSF introduces resolution.
+    skyov is 'infinite resolution'.  PSF introduces resolution.
     Enforce divisibility of oversampled arrays by oversample
     Enforce oddness of number of detector pixels in scene
-	Make more accomodating later...
+    Make more accomodating later...
     """
     if psfov.shape != skyov.shape:
         print psfov.shape, skyov.shape
         sys.exit("error: oversampled sky and psf must be same-sized arrays")
-	
+    
     if skyov.shape[0]%ov != 0:
         sys.exit("error: oversample must exactly divide sky scene array size")
 
@@ -54,11 +54,11 @@ def adjustsizes(skyov, psfov, ov):
     # the following fftconvolve()
     # Conservation of energy slightly compromised by the "same" mode in the
     # convolution, hopefully only slightly so.
-	# This is a caveat on crowded scenes... you can't fill the fov with light
-	# and truncate cleanly.  You'll have to simulate a wider FOV than you are
-	# interested in if it's important.  Check w/an fft guru if you need.
-	#
-	# Introduce resolution due to PSF...
+    # This is a caveat on crowded scenes... you can't fill the fov with light
+    # and truncate cleanly.  You'll have to simulate a wider FOV than you are
+    # interested in if it's important.  Check w/an fft guru if you need.
+    #
+    # Introduce resolution due to PSF...
     imageov = scipy.signal.fftconvolve(skyov, psfov, mode="same")
     return imageov, fovdet, halfdim, ipsov
 
@@ -67,11 +67,11 @@ def simulate_scenedata( _trials,
                         skyscene_ov, psf_ov, psf_hdr, _cubename, osample,
                         _dithers, _x_dith, _y_dith,
                         ngroups, nint, frametime, filt,
-                        outDir, tmpDir, utr, **kwargs):
+                        outDir, tmpDir, utr,uniform_flatfield=False,overwrite=0,random_seed_flatfield=None, **kwargs):
 
-	# sky is oversampled but convolved w/psf.  units: counts per second per oversampled pixel
-	# fov is oversampled odd # of detector pixels
-	# dim is a utility variable
+    # sky is oversampled but convolved w/psf.  units: counts per second per oversampled pixel
+    # fov is oversampled odd # of detector pixels
+    # dim is a utility variable
     sky, fov, dim, ips_ov = adjustsizes(skyscene_ov, psf_ov, osample)
     del skyscene_ov
     del psf_ov
@@ -182,7 +182,7 @@ def simulate_scenedata( _trials,
                 ramp = U.create_ramp(counts_array_persec, fov, ngroups, utr)
                 #fits.writeto('ramp.fits',ramp, clobber = True)
 
-                pflat = U.get_flatfield((fov,fov))
+                pflat = U.get_flatfield((fov,fov),outDir,uniform=uniform_flatfield,random_seed=random_seed_flatfield,overwrite=overwrite)
                 integration = U.create_integration(ramp)
                 integration1 = (integration - U.darkcurrent - U.background) * pflat
 
