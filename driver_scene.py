@@ -41,6 +41,8 @@ def main(argv):
     parser.add_argument('-c','--calibrator', type=int, default=1, help='create calibrator observation yes/no default 1 (yes)', choices=[0,1])
     parser.add_argument('-cr','--countrate', type=float, help='Photon count rate on 25m^2 per sec in the bandpass (CRclearp in ami_etc output)',)
     parser.add_argument('-tag','--tag', type=str, help='Tag to include in the names of the produced files',)
+    parser.add_argument('--uniform_flatfield', type=int, default='0',help='Generate random-noise flatfield (default) or uniform noiseless flatfield (if set to 1) ', choices=[0,1])
+    parser.add_argument('--random_seed_flatfield' ,type=int, default=None, help='Random seed for flatfield generation, allows for well-controlled simulations')
     
     args = parser.parse_args(argv)
 
@@ -50,6 +52,9 @@ def main(argv):
     overwrite = args.overwrite
     uptheramp = args.uptheramp
     calibrator = args.calibrator
+    file_tag = args.tag
+    uniform_flatfield = args.uniform_flatfield
+    random_seed_flatfield = args.random_seed_flatfield
 
     print "countrate input as %.2e photons/sec on 25m^2 primary in filter bandpass" % args.countrate
     countrate = args.countrate
@@ -79,8 +84,8 @@ def main(argv):
 
         # FEEDER FOR SIMULATION - read in pre-made psf made by WebbPSF (or any other way)
         # File sizes: 
-        psfdata, psfhdr = fits.getdata(outDir0+psffile, header=True)
-        skydata, skyhdr = fits.getdata(outDir0+skyfile, header=True)
+        psfdata, psfhdr = fits.getdata(os.path.join(outDir0,psffile), header=True)
+        skydata, skyhdr = fits.getdata(os.path.join(outDir0,skyfile), header=True)
         skydata = skydata / skydata.sum()  # normalize sky data total to unity!
         skydata = skydata * countrate
         print "psfdata", psfdata.shape, "totals %.2e (NRM throughput / full aperture throughput)"%psfdata.sum()
@@ -131,11 +136,11 @@ def main(argv):
         file_name_seed = skyfile.replace(".fits","__") + psffile.replace('.fits','_') + file_tag + '_'
         cubename = "t_" + file_name_seed
         if (not os.path.isfile(os.path.join(outDir,cubename+'00.fits'))) | (overwrite): 
-			scenesim.simulate_scenedata(trials, 
-										skydata, psfdata, psfhdr, cubename, osample,
-										dithers, x_dith, y_dith,
-										ngroups, nint, U.tframe, filt,
-										outDir, tmpDir, uptheramp)
+            scenesim.simulate_scenedata(trials, 
+                                        skydata, psfdata, psfhdr, cubename, osample,
+                                        dithers, x_dith, y_dith,
+                                        ngroups, nint, U.tframe, filt,
+                                        outDir, tmpDir, uptheramp,uniform_flatfield=uniform_flatfield,overwrite=overwrite,random_seed_flatfield=random_seed_flatfield)
 
         if calibrator:
             cubename = "c_" + file_name_seed
@@ -144,7 +149,7 @@ def main(argv):
                                             caldata, psfdata, psfhdr, cubename, osample,
                                             dithers, x_dith, y_dith,
                                             ngroups, nint, U.tframe, filt,
-                                            outDir, tmpDir, uptheramp)
+                                            outDir, tmpDir, uptheramp,uniform_flatfield=uniform_flatfield,overwrite=overwrite,random_seed_flatfield=random_seed_flatfield)
 
 if __name__ == "__main__":
     print sys.argv
