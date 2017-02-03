@@ -44,13 +44,10 @@ def main(argv):
     
     args = parser.parse_args(argv)
 
-    pathname = os.path.dirname(sys.argv[0])
-    fullPath = os.path.abspath(pathname)
-
     targetDir = args.targetDir 
-    outDir0 = os.getenv('HOME') + '/' + targetDir;
+    outDir0 = os.path.join(os.getenv('HOME') , targetDir);
 
-    overwrite = args.overwrite #0;
+    overwrite = args.overwrite
     uptheramp = args.uptheramp
     calibrator = args.calibrator
 
@@ -69,11 +66,11 @@ def main(argv):
         
     # generate images  
     if 1==1:
-        print "oversampling set in top level driver to 11" 
+        print "oversampling set in top level driver to %d" % osample
         trials = 1
         
-        outDir = outDir0 + '%s/' % (filt);
-        tmpDir = outDir0 + 'tmp/'
+        outDir = os.path.join(outDir0 , '%s/' % (filt));
+        tmpDir = os.path.join(outDir0 , 'tmp/')
         # NB outDir must exist to contain input files - clean up organization later?
         for dd in [outDir,tmpDir]:
             if not os.path.exists(dd):
@@ -131,23 +128,26 @@ def main(argv):
         x_dith[:] = [(x*osample - osample//2+1) for x in x_dith]
         y_dith[:] = [(y*osample - osample//2+1) for y in y_dith]
 
-        cubename = "t_" + skyfile.replace(".fits","__") + psffile
-        scenesim.simulate_scenedata(trials, 
-                                    skydata, psfdata, psfhdr, cubename, osample,
-                                    dithers, x_dith, y_dith,
-                                    ngroups, nint, U.tframe, filt,
-                                    outDir, tmpDir, uptheramp)
+        file_name_seed = skyfile.replace(".fits","__") + psffile.replace('.fits','_') + file_tag + '_'
+        cubename = "t_" + file_name_seed
+        if (not os.path.isfile(os.path.join(outDir,cubename+'00.fits'))) | (overwrite): 
+			scenesim.simulate_scenedata(trials, 
+										skydata, psfdata, psfhdr, cubename, osample,
+										dithers, x_dith, y_dith,
+										ngroups, nint, U.tframe, filt,
+										outDir, tmpDir, uptheramp)
 
         if calibrator:
-            cubename = "c_" + skyfile.replace(".fits","__") + psffile
-            scenesim.simulate_scenedata(trials, 
-                                        caldata, psfdata, psfhdr, cubename, osample,
-                                        dithers, x_dith, y_dith,
-                                        ngroups, nint, U.tframe, filt,
-                                        outDir, tmpDir, uptheramp)
+            cubename = "c_" + file_name_seed
+            if (not os.path.isfile(os.path.join(outDir,cubename+'00.fits'))) | (overwrite): 
+                scenesim.simulate_scenedata(trials, 
+                                            caldata, psfdata, psfhdr, cubename, osample,
+                                            dithers, x_dith, y_dith,
+                                            ngroups, nint, U.tframe, filt,
+                                            outDir, tmpDir, uptheramp)
 
 if __name__ == "__main__":
     print sys.argv
     main(sys.argv[1:])        
-	sys.exit(0)
+    sys.exit(0)
 
