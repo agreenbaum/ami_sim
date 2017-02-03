@@ -78,17 +78,23 @@ def simulate_scenedata( _trials,
     # print "ips_ov.shape", ips_ov.shape
     cube = np.zeros((nint,int(fov),int(fov)), np.float64)
 
+#     random_seed = random_seed_flatfield
     # Simulated sky scene data
     for p in range(_trials):
         # print 'Starting trial', p
         #CALCULATE LOCATIONS OF 4 DITHERS WITH 15 MAS ERROR ON 256 X 11 ARRAY
         mean_d, sigma_d = 0, U.dither_stddev_as * osample/U.pixscl # units: oversampled pixels
+        
+#         if random_seed is not None:
+#             np.random.seed(random_seed)
         x_dith_error = np.random.normal(mean_d,sigma_d, _dithers)
         x_dith_error_r = [int(round(n, 0)) for n in x_dith_error]
         #Accumulate dither errors
         x_dith_error_accum = np.cumsum(x_dith_error_r)
         dither_xcenter = [a + b for a, b in zip(_x_dith, x_dith_error_accum)] 
   
+#         if random_seed is not None:
+#             np.random.seed(random_seed)
         y_dith_error = np.random.normal(mean_d,sigma_d, _dithers)
         y_dith_error_r = [int(round(n, 0)) for n in y_dith_error]
         #Accumulate dither errors
