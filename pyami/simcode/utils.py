@@ -47,6 +47,7 @@ ZP = {F277W: 26.14,
 
 
 debug_utils = False
+debug_utils = True
 
 def get_flatfield(detshape,pyamiDataDir,uniform=False,random_seed=None, overwrite=0):
     """
@@ -185,7 +186,8 @@ def create_ramp(countspersec, _fov, ngroups, utr_):
                 print "poissoncube total %.2e"%poisson_noise_cube.sum()
 
 
-
+    
+    
     if debug_utils:
         s = "%.1e"
         print "\tpoissoncube total = %.1e" % poisson_noise_cube.sum() # requested nphot / nint
@@ -193,8 +195,7 @@ def create_ramp(countspersec, _fov, ngroups, utr_):
         #print "\tramp last slice peak = %.1e" % ramp[-1,:,:].max() #should be ~sat_e typically
         for i in range(ramp.shape[0]):
             print "\t", s%ramp[i,:,:].sum(), ":", s%ramp[i,:,:].max(),
-        print "\n\tcreate_ramp: end"
-
+        print "\n\tcreate_ramp: end"        
     return ramp
 
 

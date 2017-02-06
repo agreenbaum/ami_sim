@@ -67,7 +67,7 @@ def simulate_scenedata( _trials,
                         skyscene_ov, psf_ov, psf_hdr, _cubename, osample,
                         _dithers, _x_dith, _y_dith,
                         ngroups, nint, frametime, filt,
-                        outDir, tmpDir, utr,uniform_flatfield=False,overwrite=0,random_seed_flatfield=None, **kwargs):
+                        outDir, flatfield_dir, verbose , utr,uniform_flatfield=False,overwrite=0,random_seed_flatfield=None, **kwargs):
 
     # sky is oversampled but convolved w/psf.  units: counts per second per oversampled pixel
     # fov is oversampled odd # of detector pixels
@@ -101,7 +101,7 @@ def simulate_scenedata( _trials,
         y_dith_error_accum = np.cumsum(y_dith_error_r)
         dither_ycenter = [a + b for a, b in zip(_y_dith, y_dith_error_accum)]
   
-        if 0:
+        if verbose:
             print "\tPrinting commanded dither, accumulated error, final dither location for verification"
             print "  "
             print "\tcommanded X dither", _x_dith
@@ -119,7 +119,7 @@ def simulate_scenedata( _trials,
         
         for i in range( _dithers):
             xjitter[i], yjitter[i] = U.jitter(nint, osample)
-            if 0:
+            if verbose:
                 print '\t\tx jitter', xjitter[i]
                 print '\t\ty jitter', yjitter[i]
 
@@ -139,7 +139,7 @@ def simulate_scenedata( _trials,
             y[i]= dither_ycenter[i] + yjitter_array[i] 
             total_pos_error_x[i] = x[i] - _x_dith[i]
             total_pos_error_y[i] = y[i] - _y_dith[i]
-            if 0:
+            if verbose:
                 print " "
                 print '\t\ttotal positional error in X', total_pos_error_x[i]
                 print '\t\treal X pointing with dither and jitter', x[i]
@@ -156,7 +156,7 @@ def simulate_scenedata( _trials,
                 
                 skyscene_ov_ips_array_sh = U.apply_padding_image(skyscene_ov_ips_array,jj-dither_ycenter[i],ii-dither_xcenter[i], fov, osample)
 
-                if 0:
+                if verbose:
                     print  "\t\tinfo", (int(dither_xcenter[i]-(dither_xcenter[i]//osample)*float(osample)), int(osample-(dither_xcenter[i]-(dither_xcenter[i]//osample)*osample)))
                     print  "\t\tinfo", (int(dither_ycenter[i]-(dither_ycenter[i]//osample)*float(osample)), int(osample-(dither_ycenter[i]-(dither_ycenter[i]//osample)*osample)))
                 
@@ -188,12 +188,12 @@ def simulate_scenedata( _trials,
                 ramp = U.create_ramp(counts_array_persec, fov, ngroups, utr)
                 #fits.writeto('ramp.fits',ramp, clobber = True)
 
-                pflat = U.get_flatfield((fov,fov),outDir,uniform=uniform_flatfield,random_seed=random_seed_flatfield,overwrite=overwrite)
+                pflat = U.get_flatfield((fov,fov),flatfield_dir,uniform=uniform_flatfield,random_seed=random_seed_flatfield,overwrite=overwrite)
                 integration = U.create_integration(ramp)
                 integration1 = (integration - U.darkcurrent - U.background) * pflat
 
                 cube[k,:,:] = integration1     
-                if 0:
+                if verbose:
                     print '\t\tmax pixel counts', cube[k,:,:].max()
                     print " "                   
   
@@ -256,7 +256,8 @@ def simulate_scenedata( _trials,
             fitsobj.append( hdu )
             fitsobj.writeto(outDir+outfile, clobber = True)
             fitsobj.close()
-            print "\nPeak pixel and total e- in each slice:"
+            if verbose:
+				print "\nPeak pixel and total e- in each slice:"
 
         for i in range(cube.shape[0]):
             print i, " %.1e"%cube[i,:,:].max(), " %.1e"%cube[i,:,:].sum()

@@ -40,9 +40,11 @@ def main(argv):
     parser.add_argument('-G','--ngroups', type=int, default=1, help='number of up-the-ramp readouts')
     parser.add_argument('-c','--calibrator', type=int, default=1, help='create calibrator observation yes/no default 1 (yes)', choices=[0,1])
     parser.add_argument('-cr','--countrate', type=float, help='Photon count rate on 25m^2 per sec in the bandpass (CRclearp in ami_etc output)',)
-    parser.add_argument('-tag','--tag', type=str, help='Tag to include in the names of the produced files',)
+    parser.add_argument('-tag','--tag', type=str, default='', help='Tag to include in the names of the produced files')
     parser.add_argument('--uniform_flatfield', type=int, default='0',help='Generate random-noise flatfield (default) or uniform noiseless flatfield (if set to 1) ', choices=[0,1])
     parser.add_argument('--random_seed_flatfield' ,type=int, default=None, help='Random seed for flatfield generation, allows for well-controlled simulations')
+    parser.add_argument('--flatfield_dir' ,type=str, default=None, help='Directory for simulated flatfield. Defaults to targetDir.')
+    parser.add_argument('-v','--verbose',  type=int, default='0', help='Verbose output to screen. Default is off', choices=[0,1])
     
     args = parser.parse_args(argv)
 
@@ -55,17 +57,23 @@ def main(argv):
     file_tag = args.tag
     uniform_flatfield = args.uniform_flatfield
     random_seed_flatfield = args.random_seed_flatfield
-
-    print "countrate input as %.2e photons/sec on 25m^2 primary in filter bandpass" % args.countrate
+    flatfield_dir = args.flatfield_dir
     countrate = args.countrate
-
     filt = args.filter
     psffile = args.psf
     skyfile = args.sky
     osample = args.oversample
+    verbose = args.verbose	
 
     nint = args.nint        # TBD: calculate internally to save the user prep time doing ETC work
     ngroups = args.ngroups  # TBD: calculate internally to save the user prep time doing ETC work
+
+
+    if flatfield_dir is None:
+    	flatfield_dir = outDir0
+
+	if verbose:
+		print "countrate input as %.2e photons/sec on 25m^2 primary in filter bandpass" % args.countrate
     # rebin sky_conv_psf image to detector scale, use max of detector array to calculate nint, ngroups, data-collect-time
 
         
@@ -75,9 +83,9 @@ def main(argv):
         trials = 1
         
         outDir = os.path.join(outDir0 , '%s/' % (filt));
-        tmpDir = os.path.join(outDir0 , 'tmp/')
+#         tmpDir = os.path.join(outDir0 , 'tmp/')
         # NB outDir must exist to contain input files - clean up organization later?
-        for dd in [outDir,tmpDir]:
+        for dd in [outDir]:#,tmpDir]:
             if not os.path.exists(dd):
                 os.makedirs(dd)
 
@@ -140,7 +148,7 @@ def main(argv):
                                         skydata, psfdata, psfhdr, cubename, osample,
                                         dithers, x_dith, y_dith,
                                         ngroups, nint, U.tframe, filt,
-                                        outDir, tmpDir, uptheramp,uniform_flatfield=uniform_flatfield,overwrite=overwrite,random_seed_flatfield=random_seed_flatfield)
+                                        outDir, flatfield_dir, verbose, uptheramp,uniform_flatfield=uniform_flatfield,overwrite=overwrite,random_seed_flatfield=random_seed_flatfield)
 
         if calibrator:
             cubename = "c_" + file_name_seed
@@ -149,7 +157,7 @@ def main(argv):
                                             caldata, psfdata, psfhdr, cubename, osample,
                                             dithers, x_dith, y_dith,
                                             ngroups, nint, U.tframe, filt,
-                                            outDir, tmpDir, uptheramp,uniform_flatfield=uniform_flatfield,overwrite=overwrite,random_seed_flatfield=random_seed_flatfield)
+                                            outDir, flatfield_dir, verbose, uptheramp,uniform_flatfield=uniform_flatfield,overwrite=overwrite,random_seed_flatfield=random_seed_flatfield)
 
 if __name__ == "__main__":
     print sys.argv
