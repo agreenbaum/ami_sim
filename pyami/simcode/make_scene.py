@@ -67,7 +67,7 @@ def simulate_scenedata( _trials,
                         skyscene_ov, psf_ov, psf_hdr, _cubename, osample,
                         _dithers, _x_dith, _y_dith,
                         ngroups, nint, frametime, filt,
-                        outDir, flatfield_dir, verbose , utr,uniform_flatfield=False,overwrite=0,random_seed_flatfield=None, **kwargs):
+                        outDir, flatfield_dir, verbose , utr,uniform_flatfield=False,overwrite=0,random_seed_flatfield=None,overwrite_flatfield=0 **kwargs):
 
     # sky is oversampled but convolved w/psf.  units: counts per second per oversampled pixel
     # fov is oversampled odd # of detector pixels
@@ -188,7 +188,7 @@ def simulate_scenedata( _trials,
                 ramp = U.create_ramp(counts_array_persec, fov, ngroups, utr)
                 #fits.writeto('ramp.fits',ramp, clobber = True)
 
-                pflat = U.get_flatfield((fov,fov),flatfield_dir,uniform=uniform_flatfield,random_seed=random_seed_flatfield,overwrite=overwrite)
+                pflat = U.get_flatfield((fov,fov),flatfield_dir,uniform=uniform_flatfield,random_seed=random_seed_flatfield,overwrite=overwrite_flatfield)
                 integration = U.create_integration(ramp)
                 integration1 = (integration - U.darkcurrent - U.background) * pflat
 
