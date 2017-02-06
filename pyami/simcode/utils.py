@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # original code by Thatte, Anand, Sahlmann, Greenbaum
-# utility routines and constants for AMI image simulations reoganized by Sahlmann, Anand 3/2016
+# utility routines and constants for AMI image simulations reorganized by Sahlmann, Anand 3/2016
 # anand@stsci.edu 18 Mar 2016
 
 """
@@ -47,25 +47,31 @@ ZP = {F277W: 26.14,
 
 
 debug_utils = False
+debug_utils = True
 
-def get_flatfield(detshape):
+def get_flatfield(detshape,pyamiDataDir,uniform=False,random_seed=None, overwrite=0):
     """
     Read in a flat field that possesses the requested flat field error standard deviation, 
     or if the file does not exist, create, write, and return it 
     """
 
-    pathname = os.path.dirname(sys.argv[0])
-    fullPath = os.path.abspath(pathname)
-    pyamiDataDir = fullPath + '/pyami/etc/NIRISSami_apt_calcPSF/'
+#     # J. Sahlmann 2017-02-02: bug here, pyamiDataDir does not always exist because it is derived from the location where the driver script is stored/run
+#     pathname = os.path.dirname(sys.argv[0])
+#     fullPath = os.path.abspath(pathname)
+#     pyamiDataDir = fullPath + '/pyami/etc/NIRISSami_apt_calcPSF/'
 
+    ffe_file = os.path.join(pyamiDataDir ,'flat_%dx%d_sigma_%.4f.fits'%(detshape[0],detshape[1],flat_sigma))
 
-    ffe_file = pyamiDataDir +'flat_%dx%d_sigma_%.4f.fits'%(detshape[0],detshape[1],flat_sigma)
-
-    if os.access(ffe_file, os.F_OK) == True:
+    if (os.access(ffe_file, os.F_OK) == True) & (overwrite==0):
         #print "\tflat field file %s" % ffe_file
         pflat = fits.getdata(ffe_file)
     else:
-        pflat = np.random.normal(1.0, flat_sigma, size=detshape)
+        if uniform:
+            pflat = np.ones(detshape)
+        else:
+            if random_seed is not None:
+                np.random.seed(random_seed)
+            pflat = np.random.normal(1.0, flat_sigma, size=detshape)
         print "creating flat field and saving it to  file %s" % ffe_file
 
         (year, month, day, hour, minute, second, weekday, DOY, DST) =  time.gmtime()
@@ -80,7 +86,7 @@ def get_flatfield(detshape):
         hdu.data = pflat
 
         fitsobj.append( hdu )
-        fitsobj.writeto(ffe_file) # no clobber
+        fitsobj.writeto(ffe_file, clobber=True) 
         fitsobj.close()
 
     return pflat
@@ -180,7 +186,8 @@ def create_ramp(countspersec, _fov, ngroups, utr_):
                 print "poissoncube total %.2e"%poisson_noise_cube.sum()
 
 
-
+    
+    
     if debug_utils:
         s = "%.1e"
         print "\tpoissoncube total = %.1e" % poisson_noise_cube.sum() # requested nphot / nint
@@ -188,8 +195,7 @@ def create_ramp(countspersec, _fov, ngroups, utr_):
         #print "\tramp last slice peak = %.1e" % ramp[-1,:,:].max() #should be ~sat_e typically
         for i in range(ramp.shape[0]):
             print "\t", s%ramp[i,:,:].sum(), ":", s%ramp[i,:,:].max(),
-        print "\n\tcreate_ramp: end"
-
+        print "\n\tcreate_ramp: end"        
     return ramp
 
 
