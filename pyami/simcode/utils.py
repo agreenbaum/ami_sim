@@ -19,10 +19,11 @@ darkcurrent = 0.462*0.15*1.75            # ~0.12 e-/sec 09/2016, 10x earlier, st
 background = 0.125                       # 0.125 e-/sec 
 ips_size = 256                           # holdover from before AMISUB became 80x80
 flat_sigma = 0.001                       # flat field error
-pixscl = 0.065                           # arcsec/pixel WebbPSF 0.064 - DL 0.065
+pixscl = 0.0656                           # arcsec/pixel WebbPSF 0.064 - DL 0.065
 tframe = 0.0745                          # frame time for NISRAPID on AMI SUB80
 amisubfov = 80
 SAT_E = 72.0e3                           # Fullerton December 20, 2016 e-mail. Also consistent with STScI JWST ETC
+
 
 #ither_stddev_as = 0.0015                 # 15 mas placement error one-axis
 #itter_stddev_as = 0.007                 # 7 mas level 2 reqt on JWST, arcsec,
@@ -33,7 +34,7 @@ SAT_E = 72.0e3                           # Fullerton December 20, 2016 e-mail. A
 dither_stddev_as = 0.005                 # Goudfrooij Sep 2 2016 email to anand@ - good to SAMs of 30 arcsec
 jitter_stddev_as = 0.004                 # NEA ~1mas jitter FGS, plus other slower error, Kevin 2016.09.16
                                          # Post-flight determination required for more realism in simulations...
-                                         # In practise expert reduction should do rapid centroiding
+		                                 # In practise expert reduction should do rapid centroiding
                                          # (as in Holfeltz et al. TRs) through all integrations to 
                                          # determine the level of jitter, and calculate CPs in reasonable
                                          # subsets of these integrations.  
@@ -47,7 +48,7 @@ ZP = {F277W: 26.14,
 
 
 debug_utils = False
-debug_utils = True
+# debug_utils = True
 
 def get_flatfield(detshape,pyamiDataDir,uniform=False,random_seed=None, overwrite=0):
     """
@@ -117,11 +118,12 @@ def jitter(no_of_jitters, osample):
     return xjit_r, yjit_r
 
 
-def create_ramp(countspersec, _fov, ngroups, utr_):
+def create_ramp(countspersec, _fov, ngroups, utr_,verbose=0, include_noise=1):
     """ 
        input counts per second
        output: ramp has ngroups+1 slices, units are detected e- + noise
        create_ramp() called nint number of times to provide nint ramps
+       Noise contributions can be switched off by setting include_noise = 0
    """
     if utr_ :
         nreadouts = ngroups + 1
@@ -140,7 +142,7 @@ def create_ramp(countspersec, _fov, ngroups, utr_):
     cumulative_poisson_noise_cube = np.zeros((nreadouts,int(_fov),int(_fov)), np.float64)
     ramp                          = np.zeros((nreadouts,int(_fov),int(_fov)), np.float64)
 
-    if debug_utils:
+    if (debug_utils) | (verbose):
         print "\tcreate_ramp(): ngroups", ngroups, 
         print "  countspersec.sum() = %.2e"%countspersec.sum(), 
         print "  countsperframe = %.2e"%(countspersec.sum()*tframe)
@@ -149,46 +151,55 @@ def create_ramp(countspersec, _fov, ngroups, utr_):
     for iread in range(nreadouts):
 
         if iread == 0:
-            readnoise_cube[iread,:,:] = np.random.normal(0, readnoise, (int(_fov),int(_fov))) 
-            ramp[iread,:,:] = readnoise_cube[iread,:,:].mean()
-            if debug_utils:
+            if include_noise == 0:
+                ramp[iread,:,:] = np.zeros( (int(_fov),int(_fov)) )
+            else:   
+                readnoise_cube[iread,:,:] = np.random.normal(0, readnoise, (int(_fov),int(_fov))) 
+                ramp[iread,:,:] = readnoise_cube[iread,:,:].mean()
+            if (debug_utils) | (verbose):
                 print "\t\tpoissoncube slice %2d:  %.2e"%(iread, poisson_noise_cube[iread,:,:].sum()),
                 print "poissoncube total %.2e"%poisson_noise_cube.sum()
 
         elif iread == 1:
             photonexpectation = countspersec * tframe
             photonexpectation[photonexpectation <0.0] = 0.0  # catch roundoff to e-13
-            poisson_noise_cube[iread,:,:] = np.random.poisson(photonexpectation) # expose for tframe
-            background_cube[iread,:,:] =  background * tframe
-            dark_cube[iread,:,:] =  darkcurrent * tframe
-            readnoise_cube[iread,:,:] = np.random.normal(0, readnoise, (int(_fov),int(_fov))) 
-            ramp[iread,:,:] = ramp[iread-1,:,:] + \
-                          poisson_noise_cube[iread,:,:] + \
-                          dark_cube[iread,:,:] + \
-                          readnoise_cube[iread,:,:]
-            if debug_utils:
+            if include_noise == 0:
+                ramp[iread,:,:] = photonexpectation
+            else:
+                poisson_noise_cube[iread,:,:] = np.random.poisson(photonexpectation) # expose for tframe
+                background_cube[iread,:,:] =  background * tframe
+                dark_cube[iread,:,:] =  darkcurrent * tframe
+                readnoise_cube[iread,:,:] = np.random.normal(0, readnoise, (int(_fov),int(_fov))) 
+                ramp[iread,:,:] = ramp[iread-1,:,:] + \
+                              poisson_noise_cube[iread,:,:] + \
+                              dark_cube[iread,:,:] + \
+                              readnoise_cube[iread,:,:]
+            if (debug_utils) | (verbose):
                 print "\t\tpoissoncube slice %2d:  %.2e"%(iread, poisson_noise_cube[iread,:,:].sum()),
                 print "poissoncube total %.2e"%poisson_noise_cube.sum()
 
         else:
             photonexpectation = countspersec * timestep
             photonexpectation[photonexpectation <0.0] = 0.0
-            poisson_noise_cube[iread,:,:] = np.random.poisson(photonexpectation) # expose for tframe or (ng-1)*tframe
-            background_cube[iread,:,:] =  background * timestep
-            dark_cube[iread,:,:] =  darkcurrent * timestep
-            readnoise_cube[iread,:,:] = np.random.normal(0, readnoise, (int(_fov),int(_fov))) 
-            ramp[iread,:,:] = ramp[iread-1,:,:] + \
-                          poisson_noise_cube[iread,:,:] + \
-                          dark_cube[iread,:,:] + \
-                          readnoise_cube[iread,:,:]
-            if debug_utils:
+            if include_noise == 0:
+                ramp[iread,:,:] = photonexpectation
+            else:
+                poisson_noise_cube[iread,:,:] = np.random.poisson(photonexpectation) # expose for tframe or (ng-1)*tframe
+                background_cube[iread,:,:] =  background * timestep
+                dark_cube[iread,:,:] =  darkcurrent * timestep
+                readnoise_cube[iread,:,:] = np.random.normal(0, readnoise, (int(_fov),int(_fov))) 
+                ramp[iread,:,:] = ramp[iread-1,:,:] + \
+                              poisson_noise_cube[iread,:,:] + \
+                              dark_cube[iread,:,:] + \
+                              readnoise_cube[iread,:,:]
+            if (debug_utils) | (verbose):
                 print "\t\tpoissoncube slice %2d:  %.2e"%(iread, poisson_noise_cube[iread,:,:].sum()),
                 print "poissoncube total %.2e"%poisson_noise_cube.sum()
 
 
     
     
-    if debug_utils:
+    if (debug_utils) | (verbose):
         s = "%.1e"
         print "\tpoissoncube total = %.1e" % poisson_noise_cube.sum() # requested nphot / nint
         print "\tramp last slice total = %.1e" % ramp[-1,:,:].sum()   # approx same as above
