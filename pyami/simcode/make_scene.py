@@ -22,7 +22,7 @@ Using 'integration' instead of 'exposure'. In the previous versions of this code
 """
 
 
-def adjustsizes(skyov, psfov, ov):
+def adjustsizes(skyov, psfov, ov, verbose=0):
     """
     skyov is 'infinite resolution'.  PSF introduces resolution.
     Enforce divisibility of oversampled arrays by oversample
@@ -37,19 +37,22 @@ def adjustsizes(skyov, psfov, ov):
         sys.exit("error: oversample must exactly divide sky scene array size")
 
     fovdet = skyov.shape[0] // ov
-    print fovdet, "= FOV in detector pixels"
+    if verbose:
+        print fovdet, "= FOV in detector pixels"
 
     if fovdet%2 == 1:
         halfdim = (fovdet - 1) // 2
-        print halfdim, "= halfdim in detector pixels"
+        if verbose:
+            print halfdim, "= halfdim in detector pixels"
     else:
         sys.exit("error: unable to deal with even dimensional detector array (yet)")
 
     fovov = skyov.shape[0]
     ipsov = np.ones((U.ips_size*ov, U.ips_size*ov))
 
-    print "psfov.sum(), skyov.sum() are:",
-    print "%.2e"%psfov.sum(), " and  %.2e"%skyov.sum() # around 0.15 or less for psf tot.
+    if verbose:
+        print "psfov.sum(), skyov.sum() are:",
+        print "%.2e"%psfov.sum(), " and  %.2e"%skyov.sum() # around 0.15 or less for psf tot.
     # sky tot depends on scene.  Power multiplication theorem applies to
     # the following fftconvolve()
     # Conservation of energy slightly compromised by the "same" mode in the
@@ -65,14 +68,14 @@ def adjustsizes(skyov, psfov, ov):
 
 def simulate_scenedata( _trials, 
                         skyscene_ov, psf_ov, psf_hdr, _cubename, osample,
-                        _dithers, _x_dith, _y_dith,
-                        ngroups, nint, frametime, filt,
-                        outDir, flatfield_dir, verbose , utr,uniform_flatfield=False,overwrite=0,random_seed_flatfield=None,overwrite_flatfield=0 **kwargs):
+                        _dithers, _x_dith, _y_dith, apply_dither, apply_jitter,
+                        ngroups, nint, frametime, filt, include_detection_noise,
+                        outDir, flatfield_dir, verbose , utr,uniform_flatfield=False,overwrite=0,random_seed_flatfield=None,overwrite_flatfield=0, **kwargs):
 
     # sky is oversampled but convolved w/psf.  units: counts per second per oversampled pixel
     # fov is oversampled odd # of detector pixels
     # dim is a utility variable
-    sky, fov, dim, ips_ov = adjustsizes(skyscene_ov, psf_ov, osample)
+    sky, fov, dim, ips_ov = adjustsizes(skyscene_ov, psf_ov, osample,verbose=verbose)
     del skyscene_ov
     del psf_ov
     # print "ips_ov.shape", ips_ov.shape
@@ -82,20 +85,23 @@ def simulate_scenedata( _trials,
     # Simulated sky scene data
     for p in range(_trials):
         # print 'Starting trial', p
-        #CALCULATE LOCATIONS OF 4 DITHERS WITH 15 MAS ERROR ON 256 X 11 ARRAY
-        mean_d, sigma_d = 0, U.dither_stddev_as * osample/U.pixscl # units: oversampled pixels
         
+        if apply_dither == 0:
+            x_dith_error = np.zeros(_dithers)
+            y_dith_error = np.zeros(_dithers)
+        else:
 #         if random_seed is not None:
 #             np.random.seed(random_seed)
-        x_dith_error = np.random.normal(mean_d,sigma_d, _dithers)
+            #CALCULATE LOCATIONS OF 4 DITHERS WITH 15 MAS ERROR ON 256 X 11 ARRAY
+            mean_d, sigma_d = 0, U.dither_stddev_as * osample/U.pixscl # units: oversampled pixels
+            x_dith_error = np.random.normal(mean_d,sigma_d, _dithers)
+            y_dith_error = np.random.normal(mean_d,sigma_d, _dithers)
+
         x_dith_error_r = [int(round(n, 0)) for n in x_dith_error]
         #Accumulate dither errors
         x_dith_error_accum = np.cumsum(x_dith_error_r)
         dither_xcenter = [a + b for a, b in zip(_x_dith, x_dith_error_accum)] 
   
-#         if random_seed is not None:
-#             np.random.seed(random_seed)
-        y_dith_error = np.random.normal(mean_d,sigma_d, _dithers)
         y_dith_error_r = [int(round(n, 0)) for n in y_dith_error]
         #Accumulate dither errors
         y_dith_error_accum = np.cumsum(y_dith_error_r)
@@ -117,11 +123,15 @@ def simulate_scenedata( _trials,
         xjitter = range( _dithers)   #each of the 4 elements is an array of nint jitters
         yjitter = range( _dithers)   #one set per dither location
         
-        for i in range( _dithers):
-            xjitter[i], yjitter[i] = U.jitter(nint, osample)
-            if verbose:
-                print '\t\tx jitter', xjitter[i]
-                print '\t\ty jitter', yjitter[i]
+        if apply_jitter == 1:
+            for i in range( _dithers):
+                xjitter[i], yjitter[i] = U.jitter(nint, osample)                    
+                if verbose:
+                    print '\t\tx jitter', xjitter[i]
+                    print '\t\ty jitter', yjitter[i]
+        else:
+            xjitter = [[0]*nint]                
+            yjitter = [[0]*nint]
 
         xjitter_array = np.array(xjitter)
         x = range( _dithers)
@@ -131,7 +141,7 @@ def simulate_scenedata( _trials,
 
         total_pos_error_x = range( _dithers)
         total_pos_error_y = range( _dithers)
-
+        
         # If one wishes to produced all the dithered datacubes change next line to ...range(_dithers)
         # _dithers number of values of the dither locations will need  to accompany this change.
         for i in range(1):
@@ -185,7 +195,7 @@ def simulate_scenedata( _trials,
                 counts_array_persec = rebinned_array / rebinned_ips_flat
 
 
-                ramp = U.create_ramp(counts_array_persec, fov, ngroups, utr)
+                ramp = U.create_ramp(counts_array_persec, fov, ngroups, utr,verbose=verbose, include_noise=include_detection_noise)
                 #fits.writeto('ramp.fits',ramp, clobber = True)
 
                 pflat = U.get_flatfield((fov,fov),flatfield_dir,uniform=uniform_flatfield,random_seed=random_seed_flatfield,overwrite=overwrite_flatfield)
@@ -203,7 +213,7 @@ def simulate_scenedata( _trials,
             print '\tstr(i)', str(i)
             """
             outfile = _cubename+str(p)+str(i)+".fits"
-            print '\tcreating', _cubename+str(p)+str(i)+'.fits'
+            print 'creating', _cubename+str(p)+str(i)+'.fits'
 
             (year, month, day, hour, minute, second, weekday, DOY, DST) =  time.gmtime()
 
@@ -213,7 +223,7 @@ def simulate_scenedata( _trials,
      
   
             printhdr['INSTRUME']= 'NIRISS'
-            printhdr['pixscl'] = U.pixscl, 'Pixel scale (arcsec/pixel)'
+            printhdr['PIXSCL'] = U.pixscl, 'Pixel scale (arcsec/pixel)'
             printhdr['NRMNAME'] =  'G7S6', 'Tuthill Anand Beaulieu Lightsey'
             printhdr['NRM_X_A1'] =  0.00000, 'X (m) of NRM sub-ap 0 G7S6'          
             printhdr['NRM_Y_A1'] = -2.64000, 'Y (m) of NRM sub-ap 0'         
@@ -246,8 +256,12 @@ def simulate_scenedata( _trials,
             printhdr.extend(psf_hdr, update=True)
   
             #Delete and over-write keyword values written by WebbPSF
-            del printhdr['PLANE1']
-            del printhdr['DET_SAMP']
+            del_keywords = ['PLANE1','DET_SAMP']
+            for keyw in del_keywords:
+                if keyw in printhdr:
+                    del printhdr[keyw]
+#             del printhdr['PLANE1']
+#             del printhdr['DET_SAMP']
             printhdr['oversamp']= osample, 'Oversampling factor for MFT'
             printhdr['AUTHOR'] = '%s@%s' % (os.getenv('USER'), os.getenv('HOST')), 'username@host for calculation'
             printhdr['DATE'] = '%4d-%02d-%02dT%02d:%02d:%02d' %  (year, month, day, hour, minute, second), 'Date of calculation'
@@ -257,11 +271,12 @@ def simulate_scenedata( _trials,
             fitsobj.writeto(outDir+outfile, clobber = True)
             fitsobj.close()
             if verbose:
-				print "\nPeak pixel and total e- in each slice:"
+                print "\nPeak pixel and total e- in each slice:"
 
-        for i in range(cube.shape[0]):
-            print i, " %.1e"%cube[i,:,:].max(), " %.1e"%cube[i,:,:].sum()
-        print ""
+        if verbose:
+            for i in range(cube.shape[0]):
+                print i, " %.1e"%cube[i,:,:].max(), " %.1e"%cube[i,:,:].sum()
+            print ""
 
-        print "up-the-ramp %d"%utr, 
-        print "\nTotal e- in cube:", "%.2e   "%cube.sum()
+            print "up-the-ramp %d"%utr, 
+            print "\nTotal e- in cube:", "%.2e   "%cube.sum()
