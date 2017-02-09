@@ -56,7 +56,7 @@ def main(argv):
     parser.add_argument('-cr','--countrate', type=float, help='Photon count rate on 25m^2 per sec in the bandpass (CRclearp in ami_etc output)',)
     parser.add_argument('-tag','--tag', type=str, default='', help='Tag to include in the names of the produced files')
     parser.add_argument('--uniform_flatfield', type=int, default='0',help='Generate random-noise flatfield (default) or uniform noiseless flatfield (if set to 1) ', choices=[0,1])
-    parser.add_argument('--random_seed_flatfield' ,type=int, default=None, help='Random seed for flatfield generation, allows for well-controlled simulations')
+    parser.add_argument('--random_seed' ,type=int, default=None, help='Random seed for all noise generations, allows for well-controlled simulations')
     parser.add_argument('--flatfield_dir' ,type=str, default=None, help='Directory for simulated flatfield. Defaults to targetDir.')
     parser.add_argument('--overwrite_flatfield',  type=int, default=0, help='Overwrite simulated flatfield. Defaults to No.', choices=[0,1])
     parser.add_argument('-v','--verbose',  type=int, default=0, help='Verbose output to screen. Default is off', choices=[0,1])
@@ -77,7 +77,7 @@ def main(argv):
     calibrator = args.create_calibrator
     file_tag = args.tag
     uniform_flatfield = args.uniform_flatfield
-    random_seed_flatfield = args.random_seed_flatfield
+    random_seed = args.random_seed
     flatfield_dir = args.flatfield_dir
     overwrite_flatfield = args.overwrite_flatfield
     countrate = args.countrate
@@ -157,7 +157,7 @@ def main(argv):
                                     skydata, psfdata, psfhdr, cubename, osample,
                                     dithers, x_dith, y_dith, apply_dither, apply_jitter,
                                     ngroups, nint, U.tframe, filt,include_detection_noise,
-                                    out_dir, flatfield_dir, verbose, uptheramp,uniform_flatfield=uniform_flatfield,overwrite=overwrite,random_seed_flatfield=random_seed_flatfield,overwrite_flatfield=overwrite_flatfield)
+                                    out_dir, flatfield_dir, verbose, uptheramp,uniform_flatfield=uniform_flatfield,overwrite=overwrite,random_seed=random_seed,overwrite_flatfield=overwrite_flatfield)
 
     if calibrator:
         cubename = "c_" + file_name_seed
@@ -170,7 +170,7 @@ def main(argv):
                                         caldata, psfdata, psfhdr, cubename, osample,
                                         dithers, x_dith, y_dith, apply_dither, apply_jitter,
                                         ngroups, nint, U.tframe, filt,include_detection_noise,
-                                        out_dir, flatfield_dir, verbose, uptheramp,uniform_flatfield=uniform_flatfield,overwrite=overwrite,random_seed_flatfield=random_seed_flatfield,overwrite_flatfield=overwrite_flatfield)
+                                        out_dir, flatfield_dir, verbose, uptheramp,uniform_flatfield=uniform_flatfield,overwrite=overwrite,random_seed=random_seed,overwrite_flatfield=overwrite_flatfield)
 
     print 'Scene simulation done!'
     

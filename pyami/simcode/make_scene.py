@@ -70,7 +70,7 @@ def simulate_scenedata( _trials,
                         skyscene_ov, psf_ov, psf_hdr, _cubename, osample,
                         _dithers, _x_dith, _y_dith, apply_dither, apply_jitter,
                         ngroups, nint, frametime, filt, include_detection_noise,
-                        outDir, flatfield_dir, verbose , utr,uniform_flatfield=False,overwrite=0,random_seed_flatfield=None,overwrite_flatfield=0, **kwargs):
+                        outDir, flatfield_dir, verbose , utr,uniform_flatfield=False,overwrite=0,random_seed=None,overwrite_flatfield=0, **kwargs):
 
     # sky is oversampled but convolved w/psf.  units: counts per second per oversampled pixel
     # fov is oversampled odd # of detector pixels
@@ -81,7 +81,6 @@ def simulate_scenedata( _trials,
 
     cube = np.zeros((nint,int(fov),int(fov)), np.float64)
 
-    #     random_seed = random_seed_flatfield
     # Simulated sky scene data
     for p in range(_trials):
         # print 'Starting trial', p
@@ -90,11 +89,13 @@ def simulate_scenedata( _trials,
             x_dith_error = np.zeros(_dithers)
             y_dith_error = np.zeros(_dithers)
         else:
-#         if random_seed is not None:
-#             np.random.seed(random_seed)
             #CALCULATE LOCATIONS OF 4 DITHERS WITH 15 MAS ERROR ON 256 X 11 ARRAY
             mean_d, sigma_d = 0, U.dither_stddev_as * osample/U.pixscl # units: oversampled pixels
+			if random_seed is not None:
+				np.random.seed(random_seed)
             x_dith_error = np.random.normal(mean_d,sigma_d, _dithers)
+			if random_seed is not None:
+				np.random.seed(random_seed)
             y_dith_error = np.random.normal(mean_d,sigma_d, _dithers)
 
         x_dith_error_r = [int(round(n, 0)) for n in x_dith_error]
@@ -125,7 +126,7 @@ def simulate_scenedata( _trials,
         
         if apply_jitter == 1:
             for i in range( _dithers):
-                xjitter[i], yjitter[i] = U.jitter(nint, osample)                    
+                xjitter[i], yjitter[i] = U.jitter(nint, osample, random_seed=random_seed)                    
                 if verbose:
                     print '\t\tx jitter', xjitter[i]
                     print '\t\ty jitter', yjitter[i]
@@ -195,10 +196,10 @@ def simulate_scenedata( _trials,
                 counts_array_persec = rebinned_array / rebinned_ips_flat
 
 
-                ramp = U.create_ramp(counts_array_persec, fov, ngroups, utr,verbose=verbose, include_noise=include_detection_noise)
+                ramp = U.create_ramp(counts_array_persec, fov, ngroups, utr,verbose=verbose, include_noise=include_detection_noise,random_seed=random_seed )
                 #fits.writeto('ramp.fits',ramp, clobber = True)
 
-                pflat = U.get_flatfield((fov,fov),flatfield_dir,uniform=uniform_flatfield,random_seed=random_seed_flatfield,overwrite=overwrite_flatfield)
+                pflat = U.get_flatfield((fov,fov),flatfield_dir,uniform=uniform_flatfield,random_seed=random_seed,overwrite=overwrite_flatfield)
                 integration = U.create_integration(ramp)
                 integration1 = (integration - U.darkcurrent - U.background) * pflat
 
