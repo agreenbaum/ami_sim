@@ -37,6 +37,10 @@ def main(argv):
         then we place a unit delta function into caldata, and request a count
         rate of 0.99 * the user-requested count rate for creating calibrator
         data.                  
+        
+        To generate a calibration star observation, use a 'delta function' single positive
+    	pixel in an otherwise zero-filled array as your sky fits file.
+    	
         ''', formatter_class=argparse.RawTextHelpFormatter)
         
     parser.add_argument('-t','--target_dir',  type=str, default='niriss-ami_out/', help='output directory path (relative to home directory)')
@@ -123,25 +127,11 @@ def main(argv):
         print "psfdata", psfdata.shape, "totals %.2e (NRM throughput / full aperture throughput)"%psfdata.sum()
         print "skydata", skydata.shape, "totals %.2e (photons / s on 25^m in band)"%skydata.sum()
 
-    # Note: to generate a calibration star observation, use a 'delta function' single positive
-    # pixel in an otherwise zero-filled array as your sky fits file.  No longer do we m
-    # match total CR in skydata, but we match the CR to that of the dominant point source
-    # in skydata.  Thus if the skydata point source accounts for 0.99 of the skydata array 
-    # then we place a unit delta function into caldata, and request a count rate of 
-    # 0.99 * the user-requested count rate when creating calibrator data.
-    # WARNING - WE ASSUME A SINGLE DOMINANT POINT SOURCE IN THE SKY DATA.
-
     caldata = np.zeros(skydata.shape, np.float64)
     maxloc = np.where(skydata==skydata.max())
     ptsrcfraction = skydata[maxloc]/skydata.sum()
-    #print maxloc, ptsrcfraction
     caldata[maxloc[0][0], maxloc[1][0]] = ptsrcfraction * countrate
-    #print "caldata[maxloc],  skydata[maxloc], ratio: ",  (caldata[maxloc],  skydata[maxloc], 
-
-    """ fov = 80
-    dim = fov/2.0 """
     
-    # --
     # DEFINE DITHER POINTING in det pixels
     ipsoffset = U.ips_size//2 - (skydata.shape[0]//osample)//2
     x_dith, y_dith = [(skydata.shape[0]//2)/osample + ipsoffset,], \
@@ -156,8 +146,9 @@ def main(argv):
     y_dith[:] = [(y*osample - osample//2+1) for y in y_dith]
 
     if apply_dither == 0:
-        x_dith = [skydata.shape[0]//2] * dithers
-        y_dith = [skydata.shape[0]//2] * dithers
+    	# -2 offset introduced so that produced target image is aligned with input PSF
+        x_dith = [skydata.shape[0]//2-2] * dithers
+        y_dith = [skydata.shape[0]//2-2] * dithers
 
     file_name_seed = skyfile.replace(".fits","__") + psffile.replace('.fits','_') + file_tag + '_'
     cubename = "t_" + file_name_seed

@@ -78,10 +78,10 @@ def simulate_scenedata( _trials,
     sky, fov, dim, ips_ov = adjustsizes(skyscene_ov, psf_ov, osample,verbose=verbose)
     del skyscene_ov
     del psf_ov
-    # print "ips_ov.shape", ips_ov.shape
+
     cube = np.zeros((nint,int(fov),int(fov)), np.float64)
 
-#     random_seed = random_seed_flatfield
+    #     random_seed = random_seed_flatfield
     # Simulated sky scene data
     for p in range(_trials):
         # print 'Starting trial', p
@@ -219,11 +219,12 @@ def simulate_scenedata( _trials,
 
             fitsobj = fits.HDUList()
             hdu = fits.PrimaryHDU(  )
+            hdu.data = cube
             printhdr = hdu.header
      
-  
+  			# add header keywords
             printhdr['INSTRUME']= 'NIRISS'
-            printhdr['PIXSCL'] = U.pixscl, 'Pixel scale (arcsec/pixel)'
+            printhdr['PIXELSCL'] = U.pixscl, 'Pixel scale (arcsec/pixel)'
             printhdr['NRMNAME'] =  'G7S6', 'Tuthill Anand Beaulieu Lightsey'
             printhdr['NRM_X_A1'] =  0.00000, 'X (m) of NRM sub-ap 0 G7S6'          
             printhdr['NRM_Y_A1'] = -2.64000, 'Y (m) of NRM sub-ap 0'         
@@ -243,30 +244,39 @@ def simulate_scenedata( _trials,
             printhdr['ngroup'] = ngroups,'number of groups'  
             printhdr['framtime'] = frametime,'one(utr=1)/first-to-last(utr=0) (s)'
             printhdr['units'] = 'photoelectrons'
-            printhdr['ffe_err'] = U.flat_sigma*100, '% Flat field error stddev'
-            printhdr['jitter'] = U.jitter_stddev_as*1000, '1-axis jitter stddev mas'
-            printhdr['dith_err'] = U.dither_stddev_as*1000, '1-axis dither placement stddev mas'
+                        
+            if uniform_flatfield:
+                ffe_err = 0.
+            else:
+                ffe_err = U.flat_sigma*100              
+            if apply_dither:
+                dith_err = U.dither_stddev_as*1000
+            else:
+                dith_err = 0.
+            if apply_jitter:
+                jitter = U.jitter_stddev_as*1000
+            else:
+                jitter = 0              
+                                
+            printhdr['ffe_err'] = ffe_err, '% Flat field error stddev'
+            printhdr['jitter'] = dith_err, '1-axis jitter stddev mas'
+            printhdr['dith_err'] = jitter, '1-axis dither placement stddev mas'
+            
             printhdr['dithx%d'%i] = _x_dith[i]/osample, 'Commanded X dither (detpix in ipsarray)'
             printhdr['dithy%d'%i] = _y_dith[i]/osample, 'Commanded Y dither (detpix in ipsarray)'
             printhdr['dithx_r%d'%i] = dither_xcenter[i]/float(osample), 'Real X dither (detpix in ipsarray)'
             printhdr['dithy_r%d'%i] = dither_ycenter[i]/float(osample), 'Real Y dither (detpix in ipsarray)'
             printhdr['codesrc'] = 'make_scene.py', 'thatte@stsci.edu, anand@stsci.edu'
-    
-            # Append the header from psf_star.fits, likely created by WebbPSF
-            printhdr.extend(psf_hdr, update=True)
-  
-            #Delete and over-write keyword values written by WebbPSF
-            del_keywords = ['PLANE1','DET_SAMP']
-            for keyw in del_keywords:
-                if keyw in printhdr:
-                    del printhdr[keyw]
-#             del printhdr['PLANE1']
-#             del printhdr['DET_SAMP']
-            printhdr['oversamp']= osample, 'Oversampling factor for MFT'
+            printhdr['OVERSAMP']= osample, 'Oversampling factor for MFT'
             printhdr['AUTHOR'] = '%s@%s' % (os.getenv('USER'), os.getenv('HOST')), 'username@host for calculation'
             printhdr['DATE'] = '%4d-%02d-%02dT%02d:%02d:%02d' %  (year, month, day, hour, minute, second), 'Date of calculation'
+    
+            # Append the header from psf_star.fits, likely created by WebbPSF
+            skip_keywords = ['PLANE1','DET_SAMP','PIXELSCL','OVERSAMP','AUTHOR','DATE','HISTORY','EXTNAME']
+            for keyw in psf_hdr: 
+                if (keyw not in skip_keywords) and (keyw not in printhdr):
+                    printhdr[keyw] = ( psf_hdr[keyw], 'FROM PSFHEADER: '+np.str(psf_hdr.comments[keyw]))              
   
-            hdu.data = cube
             fitsobj.append( hdu )
             fitsobj.writeto(outDir+outfile, clobber = True)
             fitsobj.close()
