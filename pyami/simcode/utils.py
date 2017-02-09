@@ -34,7 +34,7 @@ SAT_E = 72.0e3                           # Fullerton December 20, 2016 e-mail. A
 dither_stddev_as = 0.005                 # Goudfrooij Sep 2 2016 email to anand@ - good to SAMs of 30 arcsec
 jitter_stddev_as = 0.004                 # NEA ~1mas jitter FGS, plus other slower error, Kevin 2016.09.16
                                          # Post-flight determination required for more realism in simulations...
-		                                 # In practise expert reduction should do rapid centroiding
+                                         # In practise expert reduction should do rapid centroiding
                                          # (as in Holfeltz et al. TRs) through all integrations to 
                                          # determine the level of jitter, and calculate CPs in reasonable
                                          # subsets of these integrations.  
@@ -110,13 +110,13 @@ def jitter(no_of_jitters, osample, random_seed=None):
     """ 
     mean_j, sigma_j = 0, jitter_stddev_as * osample / pixscl
 
-	if random_seed is not None:
-		np.random.seed(random_seed)
+    if random_seed is not None:
+        np.random.seed(random_seed)
     xjit = np.random.normal(mean_j,sigma_j,no_of_jitters)
     xjit_r = [int(round(n, 0)) for n in xjit]
 
-	if random_seed is not None:
-		np.random.seed(random_seed+1); # independent noise in X and Y, thus modify random_seed in a controlled way
+    if random_seed is not None:
+        np.random.seed(random_seed+1); # independent noise in X and Y, thus modify random_seed in a controlled way
     yjit = np.random.normal(mean_j,sigma_j,no_of_jitters)
     yjit_r = [int(round(n, 0)) for n in yjit]
     return xjit_r, yjit_r
@@ -158,8 +158,8 @@ def create_ramp(countspersec, _fov, ngroups, utr_,verbose=0, include_noise=1,ran
             if include_noise == 0:
                 ramp[iread,:,:] = np.zeros( (int(_fov),int(_fov)) )
             else:   
-				if random_seed is not None:
-					np.random.seed(random_seed)
+                if random_seed is not None:
+                    np.random.seed(random_seed)
                 readnoise_cube[iread,:,:] = np.random.normal(0, readnoise, (int(_fov),int(_fov))) 
                 ramp[iread,:,:] = readnoise_cube[iread,:,:].mean()
             if (debug_utils) | (verbose):
@@ -172,14 +172,14 @@ def create_ramp(countspersec, _fov, ngroups, utr_,verbose=0, include_noise=1,ran
             if include_noise == 0:
                 ramp[iread,:,:] = photonexpectation
             else:
-				if random_seed is not None:
-					# the noise in different frames should be independent, therefore modify random_seed between frames and between poisson and gaussian noise
-					np.random.seed(random_seed+iread)
+                if random_seed is not None:
+                    # the noise in different frames should be independent, therefore modify random_seed between frames and between poisson and gaussian noise
+                    np.random.seed(random_seed+iread)
                 poisson_noise_cube[iread,:,:] = np.random.poisson(photonexpectation) # expose for tframe
                 background_cube[iread,:,:] =  background * tframe
                 dark_cube[iread,:,:] =  darkcurrent * tframe
-				if random_seed is not None:
-					np.random.seed(random_seed+iread+10)
+                if random_seed is not None:
+                    np.random.seed(random_seed+iread+10)
                 readnoise_cube[iread,:,:] = np.random.normal(0, readnoise, (int(_fov),int(_fov))) 
                 ramp[iread,:,:] = ramp[iread-1,:,:] + \
                               poisson_noise_cube[iread,:,:] + \
@@ -195,13 +195,13 @@ def create_ramp(countspersec, _fov, ngroups, utr_,verbose=0, include_noise=1,ran
             if include_noise == 0:
                 ramp[iread,:,:] = photonexpectation
             else:
-				if random_seed is not None:
-					np.random.seed(random_seed + iread)
+                if random_seed is not None:
+                    np.random.seed(random_seed + iread)
                 poisson_noise_cube[iread,:,:] = np.random.poisson(photonexpectation) # expose for tframe or (ng-1)*tframe
                 background_cube[iread,:,:] =  background * timestep
                 dark_cube[iread,:,:] =  darkcurrent * timestep
-				if random_seed is not None:
-					np.random.seed(random_seed + iread+10)
+                if random_seed is not None:
+                    np.random.seed(random_seed + iread+10)
                 readnoise_cube[iread,:,:] = np.random.normal(0, readnoise, (int(_fov),int(_fov))) 
                 ramp[iread,:,:] = ramp[iread-1,:,:] + \
                               poisson_noise_cube[iread,:,:] + \

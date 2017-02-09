@@ -91,11 +91,11 @@ def simulate_scenedata( _trials,
         else:
             #CALCULATE LOCATIONS OF 4 DITHERS WITH 15 MAS ERROR ON 256 X 11 ARRAY
             mean_d, sigma_d = 0, U.dither_stddev_as * osample/U.pixscl # units: oversampled pixels
-			if random_seed is not None:
-				np.random.seed(random_seed)
+            if random_seed is not None:
+                np.random.seed(random_seed)
             x_dith_error = np.random.normal(mean_d,sigma_d, _dithers)
-			if random_seed is not None:
-				np.random.seed(random_seed)
+            if random_seed is not None:
+                np.random.seed(random_seed)
             y_dith_error = np.random.normal(mean_d,sigma_d, _dithers)
 
         x_dith_error_r = [int(round(n, 0)) for n in x_dith_error]
@@ -223,7 +223,7 @@ def simulate_scenedata( _trials,
             hdu.data = cube
             printhdr = hdu.header
      
-  			# add header keywords
+            # add header keywords
             printhdr['INSTRUME']= 'NIRISS'
             printhdr['PIXELSCL'] = U.pixscl, 'Pixel scale (arcsec/pixel)'
             printhdr['NRMNAME'] =  'G7S6', 'Tuthill Anand Beaulieu Lightsey'
