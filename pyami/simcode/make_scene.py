@@ -279,7 +279,7 @@ def simulate_scenedata( _trials,
                     printhdr[keyw] = ( psf_hdr[keyw], 'FROM PSFHEADER: '+np.str(psf_hdr.comments[keyw]))              
   
             fitsobj.append( hdu )
-            fitsobj.writeto(outDir+outfile, clobber = True)
+            fitsobj.writeto(os.path.join(outDir,outfile), clobber = True)
             fitsobj.close()
             if verbose:
                 print "\nPeak pixel and total e- in each slice:"

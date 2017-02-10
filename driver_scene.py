@@ -39,16 +39,18 @@ def main(argv):
         data.                  
         
         To generate a calibration star observation, use a 'delta function' single positive
-    	pixel in an otherwise zero-filled array as your sky fits file.
-    	
+        pixel in an otherwise zero-filled array as your sky fits file.
+        
         ''', formatter_class=argparse.RawTextHelpFormatter)
         
     parser.add_argument('-t','--target_dir',  type=str, default='niriss-ami_out/', help='output directory path (relative to home directory)')
+    parser.add_argument('--output_absolute_path',  type=str, default=None, help='absolute output directory path, if specified it overrides --target_dir')
+    
     parser.add_argument('-o','--overwrite',  type=int, default=0, help='overwrite yes/no, default 0 (no)', choices=[0,1])
     parser.add_argument('-utr','--uptheramp',  type=int, default=0, help='generate up-the-ramp fits file? yes/no, default 0 (no)', choices=[0,1])
     parser.add_argument('-f', '--filter', type=str, help='filter name (upper/lower case)', choices=["F277W", "F380M", "F430M", "F480M"])
-    parser.add_argument('-p','--psf', type=str, help='oversampled PSF fits file. Spectral type set in this')
-    parser.add_argument('-s','--sky', type=str, help='oversampled sky scene fits file, normalized to sum to unity')
+    parser.add_argument('-p','--psf', type=str, help='absolute path to oversampled PSF fits file. Spectral type set in this')
+    parser.add_argument('-s','--sky', type=str, help='absolute path to oversampled sky scene fits file, normalized to sum to unity')
     parser.add_argument('-os','--oversample', type=int, help='sky scene oversampling (must be odd integer number)', choices=[1,3,5,7,9,11])
     parser.add_argument('-I','--nint', type=int, default=1, help='number of integrations (IR community calls these exposures sometimes)')
     parser.add_argument('-G','--ngroups', type=int, default=1, help='number of up-the-ramp readouts')
@@ -71,6 +73,13 @@ def main(argv):
 
     target_dir = args.target_dir 
     out_dir_0 = os.path.join(os.getenv('HOME') , target_dir);
+
+    output_absolute_path = args.output_absolute_path
+    if output_absolute_path is not None:
+        #       override target_dir
+        out_dir_0 = output_absolute_path
+        
+
 
     overwrite = args.overwrite
     uptheramp = args.uptheramp
@@ -119,8 +128,10 @@ def main(argv):
 
     # FEEDER FOR SIMULATION - read in pre-made psf made by WebbPSF (or any other way)
     # File sizes: 
-    psfdata, psfhdr = fits.getdata(os.path.join(out_dir_0,psffile), header=True)
-    skydata, skyhdr = fits.getdata(os.path.join(out_dir_0,skyfile), header=True)
+#     psfdata, psfhdr = fits.getdata(os.path.join(out_dir_0,psffile), header=True)
+#     skydata, skyhdr = fits.getdata(os.path.join(out_dir_0,skyfile), header=True)
+    psfdata, psfhdr = fits.getdata(psffile, header=True)
+    skydata, skyhdr = fits.getdata(skyfile, header=True)
     skydata = skydata / skydata.sum()  # normalize sky data total to unity!
     skydata = skydata * countrate
     if verbose:
@@ -146,11 +157,13 @@ def main(argv):
     y_dith[:] = [(y*osample - osample//2+1) for y in y_dith]
 
     if apply_dither == 0:
-    	# -2 offset introduced so that produced target image is aligned with input PSF
-        x_dith = [skydata.shape[0]//2-2] * dithers
-        y_dith = [skydata.shape[0]//2-2] * dithers
+        # -osample/2 offset introduced so that produced target image is aligned with input PSF
+        x_dith = [ (skydata.shape[0] )//2 - np.floor(osample/2)] * dithers
+        y_dith = [ (skydata.shape[0] )//2 - np.floor(osample/2)] * dithers
 
-    file_name_seed = skyfile.replace(".fits","__") + psffile.replace('.fits','_') + file_tag + '_'
+	basename_sky = os.path.basename(skyfile)
+	basename_psf = os.path.basename(psffile)
+    file_name_seed = basename_sky.replace(".fits","__") + basename_psf.replace('.fits','_') + file_tag + '_'
     cubename = "t_" + file_name_seed
     if (not os.path.isfile(os.path.join(out_dir,cubename+'00.fits'))) | (overwrite): 
         scenesim.simulate_scenedata(trials, 
