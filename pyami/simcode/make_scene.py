@@ -70,7 +70,7 @@ def simulate_scenedata( _trials,
                         skyscene_ov, psf_ov, psf_hdr, _cubename, osample,
                         _dithers, _x_dith, _y_dith, apply_dither, apply_jitter,
                         ngroups, nint, frametime, filt, include_detection_noise,
-                        outDir, flatfield_dir, verbose , utr,uniform_flatfield=False,overwrite=0,random_seed_flatfield=None,overwrite_flatfield=0, **kwargs):
+                        outDir, flatfield_dir, verbose , utr,uniform_flatfield=False,overwrite=0,random_seed=None,overwrite_flatfield=0, **kwargs):
 
     # sky is oversampled but convolved w/psf.  units: counts per second per oversampled pixel
     # fov is oversampled odd # of detector pixels
@@ -78,10 +78,9 @@ def simulate_scenedata( _trials,
     sky, fov, dim, ips_ov = adjustsizes(skyscene_ov, psf_ov, osample,verbose=verbose)
     del skyscene_ov
     del psf_ov
-    # print "ips_ov.shape", ips_ov.shape
+
     cube = np.zeros((nint,int(fov),int(fov)), np.float64)
 
-#     random_seed = random_seed_flatfield
     # Simulated sky scene data
     for p in range(_trials):
         # print 'Starting trial', p
@@ -90,11 +89,13 @@ def simulate_scenedata( _trials,
             x_dith_error = np.zeros(_dithers)
             y_dith_error = np.zeros(_dithers)
         else:
-#         if random_seed is not None:
-#             np.random.seed(random_seed)
             #CALCULATE LOCATIONS OF 4 DITHERS WITH 15 MAS ERROR ON 256 X 11 ARRAY
             mean_d, sigma_d = 0, U.dither_stddev_as * osample/U.pixscl # units: oversampled pixels
+            if random_seed is not None:
+                np.random.seed(random_seed)
             x_dith_error = np.random.normal(mean_d,sigma_d, _dithers)
+            if random_seed is not None:
+                np.random.seed(random_seed)
             y_dith_error = np.random.normal(mean_d,sigma_d, _dithers)
 
         x_dith_error_r = [int(round(n, 0)) for n in x_dith_error]
@@ -125,7 +126,7 @@ def simulate_scenedata( _trials,
         
         if apply_jitter == 1:
             for i in range( _dithers):
-                xjitter[i], yjitter[i] = U.jitter(nint, osample)                    
+                xjitter[i], yjitter[i] = U.jitter(nint, osample, random_seed=random_seed)                    
                 if verbose:
                     print '\t\tx jitter', xjitter[i]
                     print '\t\ty jitter', yjitter[i]
@@ -195,10 +196,10 @@ def simulate_scenedata( _trials,
                 counts_array_persec = rebinned_array / rebinned_ips_flat
 
 
-                ramp = U.create_ramp(counts_array_persec, fov, ngroups, utr,verbose=verbose, include_noise=include_detection_noise)
+                ramp = U.create_ramp(counts_array_persec, fov, ngroups, utr,verbose=verbose, include_noise=include_detection_noise,random_seed=random_seed )
                 #fits.writeto('ramp.fits',ramp, clobber = True)
 
-                pflat = U.get_flatfield((fov,fov),flatfield_dir,uniform=uniform_flatfield,random_seed=random_seed_flatfield,overwrite=overwrite_flatfield)
+                pflat = U.get_flatfield((fov,fov),flatfield_dir,uniform=uniform_flatfield,random_seed=random_seed,overwrite=overwrite_flatfield)
                 integration = U.create_integration(ramp)
                 integration1 = (integration - U.darkcurrent - U.background) * pflat
 
@@ -219,11 +220,12 @@ def simulate_scenedata( _trials,
 
             fitsobj = fits.HDUList()
             hdu = fits.PrimaryHDU(  )
+            hdu.data = cube
             printhdr = hdu.header
      
-  
+            # add header keywords
             printhdr['INSTRUME']= 'NIRISS'
-            printhdr['PIXSCL'] = U.pixscl, 'Pixel scale (arcsec/pixel)'
+            printhdr['PIXELSCL'] = U.pixscl, 'Pixel scale (arcsec/pixel)'
             printhdr['NRMNAME'] =  'G7S6', 'Tuthill Anand Beaulieu Lightsey'
             printhdr['NRM_X_A1'] =  0.00000, 'X (m) of NRM sub-ap 0 G7S6'          
             printhdr['NRM_Y_A1'] = -2.64000, 'Y (m) of NRM sub-ap 0'         
@@ -243,32 +245,41 @@ def simulate_scenedata( _trials,
             printhdr['ngroup'] = ngroups,'number of groups'  
             printhdr['framtime'] = frametime,'one(utr=1)/first-to-last(utr=0) (s)'
             printhdr['units'] = 'photoelectrons'
-            printhdr['ffe_err'] = U.flat_sigma*100, '% Flat field error stddev'
-            printhdr['jitter'] = U.jitter_stddev_as*1000, '1-axis jitter stddev mas'
-            printhdr['dith_err'] = U.dither_stddev_as*1000, '1-axis dither placement stddev mas'
+                        
+            if uniform_flatfield:
+                ffe_err = 0.
+            else:
+                ffe_err = U.flat_sigma*100              
+            if apply_dither:
+                dith_err = U.dither_stddev_as*1000
+            else:
+                dith_err = 0.
+            if apply_jitter:
+                jitter = U.jitter_stddev_as*1000
+            else:
+                jitter = 0              
+                                
+            printhdr['ffe_err'] = ffe_err, '% Flat field error stddev'
+            printhdr['jitter'] = dith_err, '1-axis jitter stddev mas'
+            printhdr['dith_err'] = jitter, '1-axis dither placement stddev mas'
+            
             printhdr['dithx%d'%i] = _x_dith[i]/osample, 'Commanded X dither (detpix in ipsarray)'
             printhdr['dithy%d'%i] = _y_dith[i]/osample, 'Commanded Y dither (detpix in ipsarray)'
             printhdr['dithx_r%d'%i] = dither_xcenter[i]/float(osample), 'Real X dither (detpix in ipsarray)'
             printhdr['dithy_r%d'%i] = dither_ycenter[i]/float(osample), 'Real Y dither (detpix in ipsarray)'
             printhdr['codesrc'] = 'make_scene.py', 'thatte@stsci.edu, anand@stsci.edu'
-    
-            # Append the header from psf_star.fits, likely created by WebbPSF
-            printhdr.extend(psf_hdr, update=True)
-  
-            #Delete and over-write keyword values written by WebbPSF
-            del_keywords = ['PLANE1','DET_SAMP']
-            for keyw in del_keywords:
-                if keyw in printhdr:
-                    del printhdr[keyw]
-#             del printhdr['PLANE1']
-#             del printhdr['DET_SAMP']
-            printhdr['oversamp']= osample, 'Oversampling factor for MFT'
+            printhdr['OVERSAMP']= osample, 'Oversampling factor for MFT'
             printhdr['AUTHOR'] = '%s@%s' % (os.getenv('USER'), os.getenv('HOST')), 'username@host for calculation'
             printhdr['DATE'] = '%4d-%02d-%02dT%02d:%02d:%02d' %  (year, month, day, hour, minute, second), 'Date of calculation'
+    
+            # Append the header from psf_star.fits, likely created by WebbPSF
+            skip_keywords = ['PLANE1','DET_SAMP','PIXELSCL','OVERSAMP','AUTHOR','DATE','HISTORY','EXTNAME']
+            for keyw in psf_hdr: 
+                if (keyw not in skip_keywords) and (keyw not in printhdr):
+                    printhdr[keyw] = ( psf_hdr[keyw], 'FROM PSFHEADER: '+np.str(psf_hdr.comments[keyw]))              
   
-            hdu.data = cube
             fitsobj.append( hdu )
-            fitsobj.writeto(outDir+outfile, clobber = True)
+            fitsobj.writeto(os.path.join(outDir,outfile), clobber = True)
             fitsobj.close()
             if verbose:
                 print "\nPeak pixel and total e- in each slice:"
