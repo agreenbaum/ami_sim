@@ -17,12 +17,7 @@ class DriverSceneTestCase(unittest.TestCase):
     
         # setup parameters for simulation, most are passed on to driver_scene
         verbose = 0
-#       verbose_figures = 1
-#       save_plot = 1
-
         overwrite = 1
-#       overwrite_psf_opd_flat = 1
-
 
         apply_dither = 0
         apply_jitter = 0
@@ -44,13 +39,10 @@ class DriverSceneTestCase(unittest.TestCase):
         # directory containing the static test data
         data_dir = os.path.join(os.path.dirname(__file__),'test_data')
 
-
         # define output directory for dynamically generated data
         out_dir = os.path.join(os.path.dirname(__file__),'tmp_data')
         if not os.path.exists(out_dir):
             os.makedirs(out_dir)
-
-
 
         name_seed = 'PSF_NIRISS_%s_%s'%(mask,filter)
         point_source_image_name = 'point_source_image.fits'
@@ -59,8 +51,6 @@ class DriverSceneTestCase(unittest.TestCase):
         psf_image_name = name_seed + '_reference.fits'
         psf_image = os.path.join(data_dir,psf_image_name)
         psf_image_without_oversampling = os.path.join(data_dir,psf_image_name.replace('.fits','_without_oversampling.fits'))
-
-    
     
         # generate delta-function like image to feed as point-source into scene_sim    
         n_image2 = n_image * OVERSAMPLE
@@ -104,15 +94,15 @@ class DriverSceneTestCase(unittest.TestCase):
         
         # directory where simulated data was written
         filter_dir = os.path.join(out_dir,filter)
+        self.filter_dir = filter_dir    
 
         # list of files produced for target
         file_list = glob.glob(os.path.join(filter_dir,'%s*.fits' % 't_' ));
             
-        self.filter_dir = filter_dir    
         self.simulated_image = file_list[0]
         self.psf_image_without_oversampling = psf_image_without_oversampling
-        
-        
+
+                
     def test_image_ratio(self):
     
         # load simulated image  data
@@ -123,7 +113,7 @@ class DriverSceneTestCase(unittest.TestCase):
         
         ratio_data = t_sim/psf_without_oversampling;
         fits.writeto(os.path.join(self.filter_dir,'ratio_image.fits'), ratio_data, clobber=True)
-        print('Noise of ratio image %3.3f' % np.std(ratio_data))
+		#         print('Noise of ratio image %3.3f' % np.std(ratio_data))
         
         self.assertTrue(np.std(ratio_data) < 10., 'driver_scene simulation of point source is inaccurate')
 
