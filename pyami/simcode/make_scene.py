@@ -162,6 +162,8 @@ def simulate_scenedata( _trials,
 
             for k,(ii,jj) in enumerate(zip(x[i],y[i])):
 
+                ii = np.int(ii)
+                jj = np.int(jj)
                 ips_section = ips_ov[ii-dim*osample:ii+(dim+1)*osample,jj-dim*osample:jj+(dim+1)*osample]   
                 skyscene_ov_ips_array = ips_section * sky
                 
