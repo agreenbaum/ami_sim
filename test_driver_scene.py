@@ -108,6 +108,7 @@ class DriverSceneTestCase(unittest.TestCase):
         # list of files produced for target
         file_list = glob.glob(os.path.join(filter_dir,'%s*.fits' % 't_' ));
             
+        self.filter_dir = filter_dir    
         self.simulated_image = file_list[0]
         self.psf_image_without_oversampling = psf_image_without_oversampling
         
@@ -121,7 +122,7 @@ class DriverSceneTestCase(unittest.TestCase):
         psf_without_oversampling = fits.getdata(self.psf_image_without_oversampling)
         
         ratio_data = t_sim/psf_without_oversampling;
-		#       fits.writeto(psf_image_without_oversampling.replace('_without_oversampling','_ratio'), ratio_data, clobber=True)
+        fits.writeto(os.path.join(self.filter_dir,'ratio_image.fits'), ratio_data, clobber=True)
         print('Noise of ratio image %3.3f' % np.std(ratio_data))
         
         self.assertTrue(np.std(ratio_data) < 10., 'driver_scene simulation of point source is inaccurate')
