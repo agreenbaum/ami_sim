@@ -4,12 +4,8 @@ import unittest, os, glob
 import numpy as np
 from astropy.io import fits
 
-# sys.path.append( os.path.join(home_dir,'jwst/code/github/niriss/ami_sim') )  
 import driver_scene
-# reload(driver_scene)
-# sys.path.append( os.path.join(home_dir,'jwst/code/github/niriss/ami_sim/pyami/simcode') )  
 from pyami.simcode import utils
-# reload(utils)
 
 
 class DriverSceneTestCase(unittest.TestCase):
