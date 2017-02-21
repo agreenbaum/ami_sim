@@ -14,9 +14,9 @@ import os
 cdsreadnoise = 21.0                      # CDS read noise (e-)
 readnoise = cdsreadnoise/np.sqrt(2)      # read noise for one frame
                                          # 0.012 e-/sec  value used until 09 2016
-darkcurrent = 0.462*0.15*1.75            # ~0.12 e-/sec 09/2016, 10x earlier, still 6e- in max 800 frames
+darkcurrent = 0.04                       # ~0.12 e-/sec 09/2016, 10x earlier, still 6e- in max 800 frames
                                          # Kevin Volk via Deepashri Thatte
-background = 0.125                       # 0.125 e-/sec 
+background = 0.462*0.15*1.75             # 0.125 e-/sec 
 ips_size = 256                           # holdover from before AMISUB became 80x80
 flat_sigma = 0.001                       # flat field error
 pixscl = 0.0656                           # arcsec/pixel WebbPSF 0.064 - DL 0.065
