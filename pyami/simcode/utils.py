@@ -11,6 +11,10 @@ import sys, time
 from astropy.io import fits
 import os
 
+# global variables
+global readnoise,background,darkcurrent
+
+
 cdsreadnoise = 21.0                      # CDS read noise (e-)
 readnoise = cdsreadnoise/np.sqrt(2)      # read noise for one frame
                                          # 0.012 e-/sec  value used until 09 2016
@@ -129,6 +133,18 @@ def create_ramp(countspersec, _fov, ngroups, utr_,verbose=0, include_noise=1,ran
        create_ramp() called nint number of times to provide nint ramps
        Noise contributions can be switched off by setting include_noise = 0
    """
+   
+    global readnoise,background,darkcurrent
+   
+    #       JSA 2017-02-22: investigate effects of various noise contributions
+    if include_noise == -1:
+        # zero all noises except photon noise
+        background = 0.
+        readnoise = 1.e-16
+        darkcurrent = 0.
+        include_noise = 1
+        
+   
     if utr_ :
         nreadouts = ngroups + 1
         timestep = tframe
@@ -159,7 +175,7 @@ def create_ramp(countspersec, _fov, ngroups, utr_,verbose=0, include_noise=1,ran
                 ramp[iread,:,:] = np.zeros( (int(_fov),int(_fov)) )
             else:   
                 if random_seed is not None:
-                    np.random.seed(random_seed)
+                    np.random.seed(random_seed+111)
                 readnoise_cube[iread,:,:] = np.random.normal(0, readnoise, (int(_fov),int(_fov))) 
                 ramp[iread,:,:] = readnoise_cube[iread,:,:].mean()
             if (debug_utils) | (verbose):
@@ -174,12 +190,12 @@ def create_ramp(countspersec, _fov, ngroups, utr_,verbose=0, include_noise=1,ran
             else:
                 if random_seed is not None:
                     # the noise in different frames should be independent, therefore modify random_seed between frames and between poisson and gaussian noise
-                    np.random.seed(random_seed+iread)
+                    np.random.seed(random_seed+iread+111)
                 poisson_noise_cube[iread,:,:] = np.random.poisson(photonexpectation) # expose for tframe
                 background_cube[iread,:,:] =  background * tframe
                 dark_cube[iread,:,:] =  darkcurrent * tframe
                 if random_seed is not None:
-                    np.random.seed(random_seed+iread+10)
+                    np.random.seed(random_seed+iread+111+10)
                 readnoise_cube[iread,:,:] = np.random.normal(0, readnoise, (int(_fov),int(_fov))) 
                 ramp[iread,:,:] = ramp[iread-1,:,:] + \
                               poisson_noise_cube[iread,:,:] + \
@@ -196,12 +212,12 @@ def create_ramp(countspersec, _fov, ngroups, utr_,verbose=0, include_noise=1,ran
                 ramp[iread,:,:] = photonexpectation
             else:
                 if random_seed is not None:
-                    np.random.seed(random_seed + iread)
+                    np.random.seed(random_seed + iread+111)
                 poisson_noise_cube[iread,:,:] = np.random.poisson(photonexpectation) # expose for tframe or (ng-1)*tframe
                 background_cube[iread,:,:] =  background * timestep
                 dark_cube[iread,:,:] =  darkcurrent * timestep
                 if random_seed is not None:
-                    np.random.seed(random_seed + iread+10)
+                    np.random.seed(random_seed + iread+111+10)
                 readnoise_cube[iread,:,:] = np.random.normal(0, readnoise, (int(_fov),int(_fov))) 
                 ramp[iread,:,:] = ramp[iread-1,:,:] + \
                               poisson_noise_cube[iread,:,:] + \

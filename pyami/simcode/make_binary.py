@@ -202,7 +202,7 @@ def simulate_skydata(_trials, _binarystar_array, _cubename, _dithers,  _x_dith, 
 
                 #fits.writeto(tmpDir+'ramp.fits',ramp, clobber = True)
 
-                pflat = U.get_flatfield((fov,fov))
+                pflat = U.get_flatfield((fov,fov),outDir)
 
                 # Do a double correlation subtraction or equivalent...
                 integration = (U.create_integration(ramp) - U.darkcurrent - U.background) * pflat
