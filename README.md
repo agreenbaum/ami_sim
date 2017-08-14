@@ -28,22 +28,21 @@ It requires WebbPSF and pysynphot python modules and supporting data files.
 # driver_scene  -  creates simulated data of sky.fits using psf.fits, e.g.:
 ---------------
 
-> python driver_scene.py -t simulatedData/ -o 0 -utr 0 -f \
-    F430M -p psf.fits -s sky.fits -O 11 -I 10 -G 2 [-c 0]  -cr 2.1e6
+> python driver_scene.py -t simulatedData/ -o 0 -utr 0 -f F430M -p [absolute path to psf file]/psf.fits -s [absolute path to psf file]/sky.fits -os 11 -I 10 -G 2 [-c 0]  -cr 2.1e6
     
 
 	
-You need to create a directory (eg simulatedData in the above example) in your home directory which contains 
+You need to create a directory (eg simulatedData in the above example) in your home directory for the saved files. You also need to point to: 
 
-	- the sky scene (eg sky.fits, normalized on-the-fly to cr in photons/s on 25m^2 in filter bandpass)
-	- the PSF file (eg psf.fits) (PSF.sum = NRM area / full aperture area)
+	- Absolute path to the sky scene (eg sky.fits, normalized on-the-fly to cr in photons/s on 25m^2 in filter bandpass)
+	- Absolute path to the PSF file (eg psf.fits) (PSF.sum = NRM area / full aperture area)
 
 The output "data cube"" files will be named using your input filename,  i.e. 
 	- t_sky__psf.fits  for the target
 	- c_sky__psf.fits for the calibrator (-c flag omitted, or -c 1)
 
 
-** Only oversampling of 11 is tested so far - use the flag "-O 11" **
+** Only oversampling of 11 is tested so far - use the flag "-os 11" **
 ** Oversampling 5 testing in progress **
 
 NOTES: 

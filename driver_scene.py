@@ -161,8 +161,8 @@ def main(argv):
         x_dith = [ (skydata.shape[0] )//2 - np.floor(osample/2)] * dithers
         y_dith = [ (skydata.shape[0] )//2 - np.floor(osample/2)] * dithers
 
-	basename_sky = os.path.basename(skyfile)
-	basename_psf = os.path.basename(psffile)
+    basename_sky = os.path.basename(skyfile)
+    basename_psf = os.path.basename(psffile)
     file_name_seed = basename_sky.replace(".fits","__") + basename_psf.replace('.fits','_') + file_tag + '_'
     cubename = "t_" + file_name_seed
     if (not os.path.isfile(os.path.join(out_dir,cubename+'00.fits'))) | (overwrite): 
