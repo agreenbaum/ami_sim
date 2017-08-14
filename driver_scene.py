@@ -51,20 +51,20 @@ def main(argv):
     parser.add_argument('-f', '--filter', type=str, help='filter name (upper/lower case)', choices=["F277W", "F380M", "F430M", "F480M"])
     parser.add_argument('-p','--psf', type=str, help='absolute path to oversampled PSF fits file. Spectral type set in this')
     parser.add_argument('-s','--sky', type=str, help='absolute path to oversampled sky scene fits file, normalized to sum to unity')
-    parser.add_argument('-os','--oversample', type=int, help='sky scene oversampling (must be odd integer number)', choices=[1,3,5,7,9,11])
+    parser.add_argument('-os','--oversample', type=int, help='sky scene oversampling (must be odd integer number)', choices=[1,3,5,7,9,11,21])
     parser.add_argument('-I','--nint', type=int, default=1, help='number of integrations (IR community calls these exposures sometimes)')
     parser.add_argument('-G','--ngroups', type=int, default=1, help='number of up-the-ramp readouts')
     parser.add_argument('-c','--create_calibrator', type=int, default=1, help='create calibrator observation yes/no default 1 (yes)', choices=[0,1])
     parser.add_argument('-cr','--countrate', type=float, help='Photon count rate on 25m^2 per sec in the bandpass (CRclearp in ami_etc output)',)
     parser.add_argument('-tag','--tag', type=str, default='', help='Tag to include in the names of the produced files')
     parser.add_argument('--uniform_flatfield', type=int, default='0',help='Generate random-noise flatfield (default) or uniform noiseless flatfield (if set to 1) ', choices=[0,1])
-    parser.add_argument('--random_seed' ,type=int, default=None, help='Random seed for all noise generations, allows for well-controlled simulations')
+    parser.add_argument('--random_seed' ,type=int, default=None, help='Random seed for all noise generations (seed is altered for every integration), allows for well-controlled simulations')
     parser.add_argument('--flatfield_dir' ,type=str, default=None, help='Directory for simulated flatfield. Defaults to targetDir.')
     parser.add_argument('--overwrite_flatfield',  type=int, default=0, help='Overwrite simulated flatfield. Defaults to No.', choices=[0,1])
     parser.add_argument('-v','--verbose',  type=int, default=0, help='Verbose output to screen. Default is off', choices=[0,1])
     parser.add_argument('--apply_dither',  type=int, default=1, help='Dither the observations. Default is on', choices=[0,1])
     parser.add_argument('--apply_jitter',  type=int, default=1, help='Include pointing errors in the observations. Default is on', choices=[0,1])
-    parser.add_argument('--include_detection_noise',  type=int, default=1, help='Include photon noise, read noise, background noise, and dark current. Default is on', choices=[0,1])
+    parser.add_argument('--include_detection_noise',  type=int, default=1, help='Include photon noise, read noise, background noise, and dark current. Default is on', choices=[-1,0,1])
     
     
     args = parser.parse_args(argv)
@@ -120,11 +120,14 @@ def main(argv):
     
     out_dir = os.path.join(out_dir_0 , '%s/' % (filt));
 #         tmpDir = os.path.join(outDir0 , 'tmp/')
+    if verbose:
+        print('Output directory set to %s' % out_dir)
     # NB outDir must exist to contain input files - clean up organization later?
     for dd in [out_dir]:#,tmpDir]:
         if not os.path.exists(dd):
             os.makedirs(dd)
 
+    
 
     # FEEDER FOR SIMULATION - read in pre-made psf made by WebbPSF (or any other way)
     # File sizes: 
@@ -171,19 +174,21 @@ def main(argv):
                                     dithers, x_dith, y_dith, apply_dither, apply_jitter,
                                     ngroups, nint, U.tframe, filt,include_detection_noise,
                                     out_dir, flatfield_dir, verbose, uptheramp,uniform_flatfield=uniform_flatfield,overwrite=overwrite,random_seed=random_seed,overwrite_flatfield=overwrite_flatfield)
-
     if calibrator:
         cubename = "c_" + file_name_seed
         
         # flatfield has been simulated in target simulation, it should therefore not be overwritten
         overwrite_flatfield = 0
+
+        # noises should be independent between target and calibrator integrations
+        random_seed_calibrator = random_seed + 1
         
         if (not os.path.isfile(os.path.join(out_dir,cubename+'00.fits'))) | (overwrite): 
             scenesim.simulate_scenedata(trials, 
                                         caldata, psfdata, psfhdr, cubename, osample,
                                         dithers, x_dith, y_dith, apply_dither, apply_jitter,
                                         ngroups, nint, U.tframe, filt,include_detection_noise,
-                                        out_dir, flatfield_dir, verbose, uptheramp,uniform_flatfield=uniform_flatfield,overwrite=overwrite,random_seed=random_seed,overwrite_flatfield=overwrite_flatfield)
+                                        out_dir, flatfield_dir, verbose, uptheramp,uniform_flatfield=uniform_flatfield,overwrite=overwrite,random_seed=random_seed_calibrator,overwrite_flatfield=overwrite_flatfield)
 
     print 'Scene simulation done!'
     

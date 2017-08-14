@@ -198,17 +198,19 @@ def simulate_scenedata( _trials,
                 counts_array_persec = rebinned_array / rebinned_ips_flat
 
 
-                ramp = U.create_ramp(counts_array_persec, fov, ngroups, utr,verbose=verbose, include_noise=include_detection_noise,random_seed=random_seed )
+				# every integration should have independent noise, therefore the random_seed is altered
+                ramp = U.create_ramp(counts_array_persec, fov, ngroups, utr,verbose=verbose, include_noise=include_detection_noise,random_seed=random_seed+k*2 )
                 #fits.writeto('ramp.fits',ramp, clobber = True)
 
                 pflat = U.get_flatfield((fov,fov),flatfield_dir,uniform=uniform_flatfield,random_seed=random_seed,overwrite=overwrite_flatfield)
                 integration = U.create_integration(ramp)
                 integration1 = (integration - U.darkcurrent - U.background) * pflat
 
-                cube[k,:,:] = integration1     
+                cube[k,:,:] = integration1    
                 if verbose:
                     print '\t\tmax pixel counts', cube[k,:,:].max()
                     print " "                   
+				
   
             """
             print '\t_cubename', _cubename
@@ -288,7 +290,7 @@ def simulate_scenedata( _trials,
 
         if verbose:
             for i in range(cube.shape[0]):
-                print i, " %.1e"%cube[i,:,:].max(), " %.1e"%cube[i,:,:].sum()
+                print i, " %.1e"%cube[i,:,:].max(), " %.3e"%cube[i,:,:].sum()
             print ""
 
             print "up-the-ramp %d"%utr, 
