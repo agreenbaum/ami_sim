@@ -30,7 +30,7 @@ def adjustsizes(skyov, psfov, ov, verbose=0):
     Make more accomodating later...
     """
     if psfov.shape != skyov.shape:
-        print psfov.shape, skyov.shape
+        print( psfov.shape, skyov.shape)
         sys.exit("error: oversampled sky and psf must be same-sized arrays")
     
     if skyov.shape[0]%ov != 0:
@@ -38,12 +38,12 @@ def adjustsizes(skyov, psfov, ov, verbose=0):
 
     fovdet = skyov.shape[0] // ov
     if verbose:
-        print fovdet, "= FOV in detector pixels"
+        print( fovdet, "= FOV in detector pixels")
 
     if fovdet%2 == 1:
         halfdim = (fovdet - 1) // 2
         if verbose:
-            print halfdim, "= halfdim in detector pixels"
+            print( halfdim, "= halfdim in detector pixels")
     else:
         sys.exit("error: unable to deal with even dimensional detector array (yet)")
 
@@ -51,8 +51,8 @@ def adjustsizes(skyov, psfov, ov, verbose=0):
     ipsov = np.ones((U.ips_size*ov, U.ips_size*ov))
 
     if verbose:
-        print "psfov.sum(), skyov.sum() are:",
-        print "%.2e"%psfov.sum(), " and  %.2e"%skyov.sum() # around 0.15 or less for psf tot.
+        print( "psfov.sum(), skyov.sum() are:",)
+        print( "%.2e"%psfov.sum(), " and  %.2e"%skyov.sum() )# around 0.15 or less for psf tot.
     # sky tot depends on scene.  Power multiplication theorem applies to
     # the following fftconvolve()
     # Conservation of energy slightly compromised by the "same" mode in the
@@ -83,7 +83,7 @@ def simulate_scenedata( _trials,
 
     # Simulated sky scene data
     for p in range(_trials):
-        # print 'Starting trial', p
+        # print( 'Starting trial', p)
         
         if apply_dither == 0:
             x_dith_error = np.zeros(_dithers)
@@ -109,69 +109,79 @@ def simulate_scenedata( _trials,
         dither_ycenter = [a + b for a, b in zip(_y_dith, y_dith_error_accum)]
   
         if verbose:
-            print "\tPrinting commanded dither, accumulated error, final dither location for verification"
-            print "  "
-            print "\tcommanded X dither", _x_dith
-            print "\tAccumulated X dither error", x_dith_error_accum
-            print "\tdither_xcenter", dither_xcenter      
-            print "  "
-            print "\tcommanded Y dither", _y_dith
-            print "\tAccumulated Y dither error", y_dith_error_accum
-            print "\tdither_ycenter", dither_ycenter
-            print "  "
+            print( "\tPrinting commanded dither, accumulated error, final dither location for verification")
+            print( "  ")
+            print( "\tcommanded X dither", _x_dith)
+            print( "\tAccumulated X dither error", x_dith_error_accum)
+            print( "\tdither_xcenter", dither_xcenter      )
+            print( "  ")
+            print( "\tcommanded Y dither", _y_dith)
+            print( "\tAccumulated Y dither error", y_dith_error_accum)
+            print( "\tdither_ycenter", dither_ycenter)
+            print( "  ")
   
         #POSITIONAL ERROR = DITHER + JITTER
-        xjitter = range( _dithers)   #each of the 4 elements is an array of nint jitters
-        yjitter = range( _dithers)   #one set per dither location
+        xjitter = [[0]*_dithers]
+        yjitter = [[0]*_dithers]
+        #xjitter = list(range( _dithers))   #each of the 4 elements is an array of nint jitters
+        #yjitter = list(range( _dithers))   #one set per dither location
         
         if apply_jitter == 1:
             for i in range( _dithers):
                 xjitter[i], yjitter[i] = U.jitter(nint, osample, random_seed=random_seed)                    
                 if verbose:
-                    print '\t\tx jitter', xjitter[i]
-                    print '\t\ty jitter', yjitter[i]
+                    print( '\t\tx jitter', xjitter[i])
+                    print( '\t\ty jitter', yjitter[i])
         else:
             xjitter = [[0]*nint]                
             yjitter = [[0]*nint]
 
         xjitter_array = np.array(xjitter)
-        x = range( _dithers)
+        x = [[0]*_dithers]
+        #x = list(range( _dithers))
 
         yjitter_array = np.array(yjitter)      
-        y = range( _dithers)
+        y = [[0]*_dithers]
+        #y = list(range( _dithers))
 
-        total_pos_error_x = range( _dithers)
-        total_pos_error_y = range( _dithers)
+        #total_pos_error_x = list(range( _dithers))
+        total_pos_error_x = [[0]*_dithers]
+        #total_pos_error_y = list(range( _dithers))
+        total_pos_error_y = [[0]*_dithers]
         
         # If one wishes to produced all the dithered datacubes change next line to ...range(_dithers)
         # _dithers number of values of the dither locations will need  to accompany this change.
-        for i in range(1):
+        for i in list(range(1)):
             x[i]= dither_xcenter[i] + xjitter_array[i]
             y[i]= dither_ycenter[i] + yjitter_array[i] 
             total_pos_error_x[i] = x[i] - _x_dith[i]
             total_pos_error_y[i] = y[i] - _y_dith[i]
             if verbose:
-                print " "
-                print '\t\ttotal positional error in X', total_pos_error_x[i]
-                print '\t\treal X pointing with dither and jitter', x[i]
-                print " "
-                print '\t\ttotal positional error in Y', total_pos_error_y[i]
-                print '\t\treal Y pointing with dither and jitter', y[i] 
-                print " "
-                print '\t\tzip(x[i],y[i])',zip(x[i],y[i])
+                print( " ")
+                print( '\t\ttotal positional error in X', total_pos_error_x[i])
+                print( '\t\treal X pointing with dither and jitter', x[i])
+                print( " ")
+                print( '\t\ttotal positional error in Y', total_pos_error_y[i])
+                print( '\t\treal Y pointing with dither and jitter', y[i] )
+                print( " ")
+                print( '\t\tzip(x[i],y[i])',zip(x[i],y[i]))
 
             for k,(ii,jj) in enumerate(zip(x[i],y[i])):
 
                 ii = np.int(ii)
                 jj = np.int(jj)
+                #print( ips_ov.shape)
                 ips_section = ips_ov[ii-dim*osample:ii+(dim+1)*osample,jj-dim*osample:jj+(dim+1)*osample]   
+                #print( ii, dim*osample, (dim+1)*osample, jj, ips_section.shape)
+                print( "DEBUG:", ips_ov.shape, ips_section.shape, sky.shape)
                 skyscene_ov_ips_array = ips_section * sky
+                #sys.exit()
                 
                 skyscene_ov_ips_array_sh = U.apply_padding_image(skyscene_ov_ips_array,jj-dither_ycenter[i],ii-dither_xcenter[i], fov, osample)
 
                 if verbose:
-                    print  "\t\tinfo", (int(dither_xcenter[i]-(dither_xcenter[i]//osample)*float(osample)), int(osample-(dither_xcenter[i]-(dither_xcenter[i]//osample)*osample)))
-                    print  "\t\tinfo", (int(dither_ycenter[i]-(dither_ycenter[i]//osample)*float(osample)), int(osample-(dither_ycenter[i]-(dither_ycenter[i]//osample)*osample)))
+                    print(  "\t\tinfo", (int(dither_xcenter[i]-(dither_xcenter[i]//osample)*float(osample)), int(osample-(dither_xcenter[i]-(dither_xcenter[i]//osample)*osample))))
+                    print(  "\t\tinfo", (int(dither_ycenter[i]-(dither_ycenter[i]//osample)*float(osample)), int(osample-(dither_ycenter[i]-(dither_ycenter[i]//osample)*osample))))
                 
                 # magic pixel bookkeeping on the image
                 im = np.pad(skyscene_ov_ips_array_sh,
@@ -208,17 +218,17 @@ def simulate_scenedata( _trials,
 
                 cube[k,:,:] = integration1    
                 if verbose:
-                    print '\t\tmax pixel counts', cube[k,:,:].max()
-                    print " "                   
+                    print( '\t\tmax pixel counts', cube[k,:,:].max())
+                    print( " "                   )
 				
   
             """
-            print '\t_cubename', _cubename
-            print '\tstr(p)', str(p), 
-            print '\tstr(i)', str(i)
+            print( '\t_cubename', _cubename)
+            print( '\tstr(p)', str(p), )
+            print( '\tstr(i)', str(i))
             """
             outfile = _cubename+str(p)+str(i)+".fits"
-            print 'creating', _cubename+str(p)+str(i)+'.fits'
+            print( 'creating', _cubename+str(p)+str(i)+'.fits')
 
             (year, month, day, hour, minute, second, weekday, DOY, DST) =  time.gmtime()
 
@@ -249,6 +259,8 @@ def simulate_scenedata( _trials,
             printhdr['ngroup'] = ngroups,'number of groups'  
             printhdr['framtime'] = frametime,'one(utr=1)/first-to-last(utr=0) (s)'
             printhdr['units'] = 'photoelectrons'
+            printhdr["dithflag"] = apply_dither
+            printhdr["jittflag"] = apply_jitter
                         
             if uniform_flatfield:
                 ffe_err = 0.
@@ -264,8 +276,8 @@ def simulate_scenedata( _trials,
                 jitter = 0              
                                 
             printhdr['ffe_err'] = ffe_err, '% Flat field error stddev'
-            printhdr['jitter'] = dith_err, '1-axis jitter stddev mas'
-            printhdr['dith_err'] = jitter, '1-axis dither placement stddev mas'
+            printhdr['dith_err'] = dith_err, '1-axis jitter stddev mas'
+            printhdr['jitter'] = jitter, '1-axis dither placement stddev mas'
             
             printhdr['dithx%d'%i] = _x_dith[i]/osample, 'Commanded X dither (detpix in ipsarray)'
             printhdr['dithy%d'%i] = _y_dith[i]/osample, 'Commanded Y dither (detpix in ipsarray)'
@@ -286,12 +298,12 @@ def simulate_scenedata( _trials,
             fitsobj.writeto(os.path.join(outDir,outfile), clobber = True)
             fitsobj.close()
             if verbose:
-                print "\nPeak pixel and total e- in each slice:"
+                print( "\nPeak pixel and total e- in each slice:")
 
         if verbose:
             for i in range(cube.shape[0]):
-                print i, " %.1e"%cube[i,:,:].max(), " %.3e"%cube[i,:,:].sum()
-            print ""
+                print( i, " %.1e"%cube[i,:,:].max(), " %.3e"%cube[i,:,:].sum())
+            print( "")
 
-            print "up-the-ramp %d"%utr, 
-            print "\nTotal e- in cube:", "%.2e   "%cube.sum()
+            print( "up-the-ramp %d"%utr, )
+            print( "\nTotal e- in cube:", "%.2e   "%cube.sum())

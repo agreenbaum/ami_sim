@@ -21,9 +21,9 @@ import numpy as np
 from astropy.io import fits 
 
 import pyami.simcode.make_scene as scenesim 
-reload(scenesim)       
+#reload(scenesim)       
 import pyami.simcode.utils as U   
-reload(U)     
+#reload(U)     
 
 
 def main(argv):
@@ -48,10 +48,10 @@ def main(argv):
     
     parser.add_argument('-o','--overwrite',  type=int, default=0, help='overwrite yes/no, default 0 (no)', choices=[0,1])
     parser.add_argument('-utr','--uptheramp',  type=int, default=0, help='generate up-the-ramp fits file? yes/no, default 0 (no)', choices=[0,1])
-    parser.add_argument('-f', '--filter', type=str, help='filter name (upper/lower case)', choices=["F277W", "F380M", "F430M", "F480M"])
+    parser.add_argument('-f', '--filter', type=str, help='filter name (upper/lower case)', choices=["F277W", "F380M", "F430M", "F480M", "F444W"])
     parser.add_argument('-p','--psf', type=str, help='absolute path to oversampled PSF fits file. Spectral type set in this')
     parser.add_argument('-s','--sky', type=str, help='absolute path to oversampled sky scene fits file, normalized to sum to unity')
-    parser.add_argument('-os','--oversample', type=int, help='sky scene oversampling (must be odd integer number)', choices=[1,3,5,7,9,11,21])
+    parser.add_argument('-os','--oversample', type=int, help='sky scene oversampling (must be odd integer number)', choices=[1,3,5,7,9,11,15])
     parser.add_argument('-I','--nint', type=int, default=1, help='number of integrations (IR community calls these exposures sometimes)')
     parser.add_argument('-G','--ngroups', type=int, default=1, help='number of up-the-ramp readouts')
     parser.add_argument('-c','--create_calibrator', type=int, default=1, help='create calibrator observation yes/no default 1 (yes)', choices=[0,1])
@@ -69,7 +69,7 @@ def main(argv):
     
     args = parser.parse_args(argv)
 
-    print '*** JWST NIRISS scene simulation of NRM observation ***'
+    print( '*** JWST NIRISS scene simulation of NRM observation ***')
 
     target_dir = args.target_dir 
     out_dir_0 = os.path.join(os.getenv('HOME') , target_dir);
@@ -107,14 +107,14 @@ def main(argv):
         flatfield_dir = out_dir_0
 
     if verbose:
-        print argv
-        print "countrate input as %.2e photons/sec on 25m^2 primary in filter bandpass" % args.countrate
+        print( argv)
+        print( "countrate input as %.2e photons/sec on 25m^2 primary in filter bandpass" % args.countrate)
     # rebin sky_conv_psf image to detector scale, use max of detector array to calculate nint, ngroups, data-collect-time
 
         
     # generate images  
     if verbose:
-        print "oversampling set in top level driver to %d" % osample
+        print ( "oversampling set in top level driver to %d" % osample)
         
     trials = 1
     
@@ -137,14 +137,26 @@ def main(argv):
     skydata, skyhdr = fits.getdata(skyfile, header=True)
     skydata = skydata / skydata.sum()  # normalize sky data total to unity!
     skydata = skydata * countrate
+    #plt.imshow(skydata)
+    #plt.colorbar()
+    #plt.show()
     if verbose:
-        print "psfdata", psfdata.shape, "totals %.2e (NRM throughput / full aperture throughput)"%psfdata.sum()
-        print "skydata", skydata.shape, "totals %.2e (photons / s on 25^m in band)"%skydata.sum()
+        print( "psfdata", psfdata.shape, "totals %.2e (NRM throughput / full aperture throughput)"%psfdata.sum())
+        print( "skydata", skydata.shape, "totals %.2e (photons / s on 25^m in band)"%skydata.sum())
 
     caldata = np.zeros(skydata.shape, np.float64)
     maxloc = np.where(skydata==skydata.max())
     ptsrcfraction = skydata[maxloc]/skydata.sum()
+    #print "PROBLEM HERE:", maxloc
+    #if (len(maxloc[0][0])==1)*(len(maxloc[1][0]==1)):
+    #    ptsrcfraction = skydata[maxloc]/skydata.sum()
+    #caldata[maxloc[0], maxloc[1]] = ptsrcfraction * countrate
     caldata[maxloc[0][0], maxloc[1][0]] = ptsrcfraction * countrate
+    #else:
+    #    xmax = maxloc[0][0].mean()
+    #    ymax = maxloc[1][0].mean()
+    #    ptsrcfraction = skydata[xmax,ymax]/skydata.sum()
+    #    caldata[xmax, ymax] = ptsrcfraction * countrate
     
     # DEFINE DITHER POINTING in det pixels
     ipsoffset = U.ips_size//2 - (skydata.shape[0]//osample)//2
@@ -152,7 +164,7 @@ def main(argv):
                      [(skydata.shape[0]//2)/osample + ipsoffset,]
     dithers = len(x_dith)
     if verbose:
-        print "x_dith, y_dith", x_dith, y_dith
+        print( "x_dith, y_dith", x_dith, y_dith)
 
         
     # now convert to oversampled pixels for the calculation:
@@ -173,7 +185,9 @@ def main(argv):
                                     skydata, psfdata, psfhdr, cubename, osample,
                                     dithers, x_dith, y_dith, apply_dither, apply_jitter,
                                     ngroups, nint, U.tframe, filt,include_detection_noise,
-                                    out_dir, flatfield_dir, verbose, uptheramp,uniform_flatfield=uniform_flatfield,overwrite=overwrite,random_seed=random_seed,overwrite_flatfield=overwrite_flatfield)
+                                    out_dir, flatfield_dir, verbose, uptheramp,
+                                    uniform_flatfield=uniform_flatfield,overwrite=overwrite,
+                                    random_seed=random_seed,overwrite_flatfield=overwrite_flatfield)
     if calibrator:
         cubename = "c_" + file_name_seed
         
@@ -190,7 +204,7 @@ def main(argv):
                                         ngroups, nint, U.tframe, filt,include_detection_noise,
                                         out_dir, flatfield_dir, verbose, uptheramp,uniform_flatfield=uniform_flatfield,overwrite=overwrite,random_seed=random_seed_calibrator,overwrite_flatfield=overwrite_flatfield)
 
-    print 'Scene simulation done!'
+    print( 'Scene simulation done!')
     
 if __name__ == "__main__":
 #     print sys.argv

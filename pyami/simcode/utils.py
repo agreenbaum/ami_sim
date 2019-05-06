@@ -21,9 +21,9 @@ readnoise = cdsreadnoise/np.sqrt(2)      # read noise for one frame
 darkcurrent = 0.04                       # ~0.12 e-/sec 09/2016, 10x earlier, still 6e- in max 800 frames
                                          # Kevin Volk via Deepashri Thatte
 background = 0.462*0.15*1.75             # 0.125 e-/sec 
-ips_size = 256                           # holdover from before AMISUB became 80x80
+ips_size = 512                           # holdover from before AMISUB became 80x80
 flat_sigma = 0.001                       # flat field error
-pixscl = 0.0656                           # arcsec/pixel WebbPSF 0.064 - DL 0.065
+pixscl = 0.065                           # arcsec/pixel WebbPSF 0.064 - DL 0.065
 tframe = 0.0745                          # frame time for NISRAPID on AMI SUB80
 amisubfov = 80
 SAT_E = 72.0e3                           # Fullerton December 20, 2016 e-mail. Also consistent with STScI JWST ETC
@@ -35,8 +35,8 @@ SAT_E = 72.0e3                           # Fullerton December 20, 2016 e-mail. A
 #ither_stddev_as = 0.0015                # Anand Alex detectionlimits
 #itter_stddev_as = 0.0001                # Anand Alex centering  Also for Stefenie test reductiondetectionlimits
 
-dither_stddev_as = 0.005                 # Goudfrooij Sep 2 2016 email to anand@ - good to SAMs of 30 arcsec
-jitter_stddev_as = 0.004                 # NEA ~1mas jitter FGS, plus other slower error, Kevin 2016.09.16
+dither_stddev_as = 0.000                 # Goudfrooij Sep 2 2016 email to anand@ - good to SAMs of 30 arcsec
+jitter_stddev_as = 0.007                 # NEA ~1mas jitter FGS, plus other slower error, Kevin 2016.09.16
                                          # Post-flight determination required for more realism in simulations...
                                          # In practise expert reduction should do rapid centroiding
                                          # (as in Holfeltz et al. TRs) through all integrations to 
@@ -51,8 +51,8 @@ ZP = {F277W: 26.14,
       F480M: 23.19} # replace w/Neil R.'s values consistent w/ STScI 
 
 
-debug_utils = False
-# debug_utils = True
+# debug_utils = False
+debug_utils = True
 
 def get_flatfield(detshape,pyamiDataDir,uniform=False,random_seed=None, overwrite=0):
     """
@@ -77,7 +77,7 @@ def get_flatfield(detshape,pyamiDataDir,uniform=False,random_seed=None, overwrit
             if random_seed is not None:
                 np.random.seed(random_seed)
             pflat = np.random.normal(1.0, flat_sigma, size=detshape)
-        print "creating flat field and saving it to  file %s" % ffe_file
+        print( "creating flat field and saving it to  file %s" % ffe_file)
 
         (year, month, day, hour, minute, second, weekday, DOY, DST) =  time.gmtime()
 
@@ -163,9 +163,9 @@ def create_ramp(countspersec, _fov, ngroups, utr_,verbose=0, include_noise=1,ran
     ramp                          = np.zeros((nreadouts,int(_fov),int(_fov)), np.float64)
 
     if (debug_utils) | (verbose):
-        print "\tcreate_ramp(): ngroups", ngroups, 
-        print "  countspersec.sum() = %.2e"%countspersec.sum(), 
-        print "  countsperframe = %.2e"%(countspersec.sum()*tframe)
+        print( "\tcreate_ramp(): ngroups", ngroups, )
+        print( "  countspersec.sum() = %.2e"%countspersec.sum(), )
+        print( "  countsperframe = %.2e"%(countspersec.sum()*tframe))
 
     #calculate poisson noise for single reads, then calculate poisson noise for reads up-the-ramp
     for iread in range(nreadouts):
@@ -179,8 +179,8 @@ def create_ramp(countspersec, _fov, ngroups, utr_,verbose=0, include_noise=1,ran
                 readnoise_cube[iread,:,:] = np.random.normal(0, readnoise, (int(_fov),int(_fov))) 
                 ramp[iread,:,:] = readnoise_cube[iread,:,:].mean()
             if (debug_utils) | (verbose):
-                print "\t\tpoissoncube slice %2d:  %.2e"%(iread, poisson_noise_cube[iread,:,:].sum()),
-                print "poissoncube total %.2e"%poisson_noise_cube.sum()
+                print( "\t\tpoissoncube slice %2d:  %.2e"%(iread, poisson_noise_cube[iread,:,:].sum()),)
+                print( "poissoncube total %.2e"%poisson_noise_cube.sum())
 
         elif iread == 1:
             photonexpectation = countspersec * tframe
@@ -202,8 +202,8 @@ def create_ramp(countspersec, _fov, ngroups, utr_,verbose=0, include_noise=1,ran
                               dark_cube[iread,:,:] + \
                               readnoise_cube[iread,:,:]
             if (debug_utils) | (verbose):
-                print "\t\tpoissoncube slice %2d:  %.2e"%(iread, poisson_noise_cube[iread,:,:].sum()),
-                print "poissoncube total %.2e"%poisson_noise_cube.sum()
+                print ("\t\tpoissoncube slice %2d:  %.2e"%(iread, poisson_noise_cube[iread,:,:].sum()),)
+                print ("poissoncube total %.2e"%poisson_noise_cube.sum())
 
         else:
             photonexpectation = countspersec * timestep
@@ -224,20 +224,20 @@ def create_ramp(countspersec, _fov, ngroups, utr_,verbose=0, include_noise=1,ran
                               dark_cube[iread,:,:] + \
                               readnoise_cube[iread,:,:]
             if (debug_utils) | (verbose):
-                print "\t\tpoissoncube slice %2d:  %.2e"%(iread, poisson_noise_cube[iread,:,:].sum()),
-                print "poissoncube total %.2e"%poisson_noise_cube.sum()
+                print ("poissoncube slice %2d:  %.2e"%(iread, poisson_noise_cube[iread,:,:].sum()),)
+                print ("poissoncube total %.2e"%poisson_noise_cube.sum())
 
 
     
     
     if (debug_utils) | (verbose):
         s = "%.1e"
-        print "\tpoissoncube total = %.1e" % poisson_noise_cube.sum() # requested nphot / nint
-        print "\tramp last slice total = %.1e" % ramp[-1,:,:].sum()   # approx same as above
+        print( "poissoncube total = %.1e" % poisson_noise_cube.sum()) # requested nphot / nint
+        print( "ramp last slice total = %.1e" % ramp[-1,:,:].sum())   # approx same as above
         #print "\tramp last slice peak = %.1e" % ramp[-1,:,:].max() #should be ~sat_e typically
         for i in range(ramp.shape[0]):
-            print "\t", s%ramp[i,:,:].sum(), ":", s%ramp[i,:,:].max(),
-        print "\n\tcreate_ramp: end"        
+            print( "", s%ramp[i,:,:].sum(), ":", s%ramp[i,:,:].max(),)
+        print( "create_ramp: end"        )
     return ramp
 
 
@@ -250,8 +250,8 @@ def create_integration(ramp): #????????
     if debug_utils:
         s = "%.1e"
         for i in range(ramp.shape[0]):
-            print " ", s%ramp[i,:,:].sum(),
-        print "\n\tcreate_integration: end"
+            print( " ", s%ramp[i,:,:].sum(),)
+        print( "\n\tcreate_integration: end")
 
     if ramp.shape[0] == 2:
         data = ramp[1,:,:] # no subtraction on readnoise+DC - ramp[0,:,:]
