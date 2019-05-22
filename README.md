@@ -12,7 +12,7 @@ You should be able to run three programs:
 > python ami_etc.py --help
 
 
-# driver_binary  -  creates simulated binary star data
+# driver_binary  -  creates simulated binary star data [better to use driver_scene for more general simulation]
 ----------------
 
 > python driver_binary.py F430M 11.0 2e6 -t simulatedData/ -o 1 -fr 0.16 -dx 2.0 -dy 2.0

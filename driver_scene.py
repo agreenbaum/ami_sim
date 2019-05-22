@@ -137,9 +137,6 @@ def main(argv):
     skydata, skyhdr = fits.getdata(skyfile, header=True)
     skydata = skydata / skydata.sum()  # normalize sky data total to unity!
     skydata = skydata * countrate
-    #plt.imshow(skydata)
-    #plt.colorbar()
-    #plt.show()
     if verbose:
         print( "psfdata", psfdata.shape, "totals %.2e (NRM throughput / full aperture throughput)"%psfdata.sum())
         print( "skydata", skydata.shape, "totals %.2e (photons / s on 25^m in band)"%skydata.sum())

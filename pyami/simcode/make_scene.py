@@ -170,12 +170,8 @@ def simulate_scenedata( _trials,
 
                 ii = np.int(ii)
                 jj = np.int(jj)
-                #print( ips_ov.shape)
                 ips_section = ips_ov[ii-dim*osample:ii+(dim+1)*osample,jj-dim*osample:jj+(dim+1)*osample]   
-                #print( ii, dim*osample, (dim+1)*osample, jj, ips_section.shape)
-                print( "DEBUG:", ips_ov.shape, ips_section.shape, sky.shape)
                 skyscene_ov_ips_array = ips_section * sky
-                #sys.exit()
                 
                 skyscene_ov_ips_array_sh = U.apply_padding_image(skyscene_ov_ips_array,jj-dither_ycenter[i],ii-dither_xcenter[i], fov, osample)
 
