@@ -21,7 +21,7 @@ readnoise = cdsreadnoise/np.sqrt(2)      # read noise for one frame
 darkcurrent = 0.04                       # ~0.12 e-/sec 09/2016, 10x earlier, still 6e- in max 800 frames
                                          # Kevin Volk via Deepashri Thatte
 background = 0.462*0.15*1.75             # 0.125 e-/sec 
-ips_size = 512                           # holdover from before AMISUB became 80x80
+ips_size = 256                           # holdover from before AMISUB became 80x80
 flat_sigma = 0.001                       # flat field error
 pixscl = 0.065                           # arcsec/pixel WebbPSF 0.064 - DL 0.065
 tframe = 0.0745                          # frame time for NISRAPID on AMI SUB80
