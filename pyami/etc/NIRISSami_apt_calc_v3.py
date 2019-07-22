@@ -111,8 +111,8 @@ def generatePSF(filt=None, fov=None, osample=5, cr=None, tot_e=None, sat_e=None,
 
         resfov = fits.open(DATADIR+'%s_%d_%s_det.fits'%(filt,fov,SRC))
         resbig = fits.open(DATADIR+'%s_%d_%s_det.fits'%(filt,255,SRC))
-        print "Opening psf file ", DATADIR+'%s_%d_%s_det.fits'%(filt,fov,SRC)
-        print "Opening psf file ", DATADIR+'%s_%d_%s_det.fits'%(filt,255,SRC)
+        print("Opening psf file ", DATADIR+'%s_%d_%s_det.fits'%(filt,fov,SRC))
+        print("Opening psf file ", DATADIR+'%s_%d_%s_det.fits'%(filt,255,SRC))
         nrmfov, hdrfov = (resfov[0].data, resfov[0].header)
         nrmbig, hdrbig = (resbig[0].data, resbig[0].header)
         readfromdisk = True
@@ -132,7 +132,7 @@ def generatePSF(filt=None, fov=None, osample=5, cr=None, tot_e=None, sat_e=None,
 
     # total number of electrons in central pixel of NRM array given total number in CLEAR psf
     cptot = cpf * tot_e_full  #same as 1e6*cpfnrm/fract_31
-    print "cptot", cptot
+    print("cptot", cptot)
 
     # NINT = number of ramps (not STScI wording)
     if cptot < sat_e:
