@@ -21,9 +21,10 @@ import numpy as np
 from astropy.io import fits 
 
 import pyami.simcode.make_scene as scenesim 
-reload(scenesim)       
+import importlib
+importlib.reload(scenesim)       
 import pyami.simcode.utils as U   
-reload(U)     
+importlib.reload(U)     
 
 
 def main(argv):
@@ -69,7 +70,7 @@ def main(argv):
     
     args = parser.parse_args(argv)
 
-    print '*** JWST NIRISS scene simulation of NRM observation ***'
+    print('*** JWST NIRISS scene simulation of NRM observation ***')
 
     target_dir = args.target_dir 
     out_dir_0 = os.path.join(os.getenv('HOME') , target_dir);
@@ -107,21 +108,21 @@ def main(argv):
         flatfield_dir = out_dir_0
 
     if verbose:
-        print argv
-        print "countrate input as %.2e photons/sec on 25m^2 primary in filter bandpass" % args.countrate
+        print(argv)
+        print("countrate input as %.2e photons/sec on 25m^2 primary in filter bandpass" % args.countrate)
     # rebin sky_conv_psf image to detector scale, use max of detector array to calculate nint, ngroups, data-collect-time
 
         
     # generate images  
     if verbose:
-        print "oversampling set in top level driver to %d" % osample
+        print("oversampling set in top level driver to %d" % osample)
         
     trials = 1
     
     out_dir = os.path.join(out_dir_0 , '%s/' % (filt));
 #         tmpDir = os.path.join(outDir0 , 'tmp/')
     if verbose:
-        print('Output directory set to %s' % out_dir)
+        print(('Output directory set to %s' % out_dir))
     # NB outDir must exist to contain input files - clean up organization later?
     for dd in [out_dir]:#,tmpDir]:
         if not os.path.exists(dd):
@@ -138,8 +139,8 @@ def main(argv):
     skydata = skydata / skydata.sum()  # normalize sky data total to unity!
     skydata = skydata * countrate
     if verbose:
-        print "psfdata", psfdata.shape, "totals %.2e (NRM throughput / full aperture throughput)"%psfdata.sum()
-        print "skydata", skydata.shape, "totals %.2e (photons / s on 25^m in band)"%skydata.sum()
+        print("psfdata", psfdata.shape, "totals %.2e (NRM throughput / full aperture throughput)"%psfdata.sum())
+        print("skydata", skydata.shape, "totals %.2e (photons / s on 25^m in band)"%skydata.sum())
 
     caldata = np.zeros(skydata.shape, np.float64)
     maxloc = np.where(skydata==skydata.max())
@@ -152,12 +153,17 @@ def main(argv):
                      [(skydata.shape[0]//2)/osample + ipsoffset,]
     dithers = len(x_dith)
     if verbose:
-        print "x_dith, y_dith", x_dith, y_dith
+        print("x_dith, y_dith", x_dith, y_dith)
 
         
     # now convert to oversampled pixels for the calculation:
     x_dith[:] = [(x*osample - osample//2+1) for x in x_dith]
     y_dith[:] = [(y*osample - osample//2+1) for y in y_dith]
+    """ python 2to3 conversion"""
+    print(type(x_dith))
+    x_dith = np.array(x_dith).astype(np.int)
+    y_dith = np.array(y_dith).astype(np.int)
+    print(type(x_dith))
 
     if apply_dither == 0:
         # -osample/2 offset introduced so that produced target image is aligned with input PSF
@@ -190,7 +196,7 @@ def main(argv):
                                         ngroups, nint, U.tframe, filt,include_detection_noise,
                                         out_dir, flatfield_dir, verbose, uptheramp,uniform_flatfield=uniform_flatfield,overwrite=overwrite,random_seed=random_seed_calibrator,overwrite_flatfield=overwrite_flatfield)
 
-    print 'Scene simulation done!'
+    print('Scene simulation done!')
     
 if __name__ == "__main__":
 #     print sys.argv

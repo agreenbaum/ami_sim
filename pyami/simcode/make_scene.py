@@ -30,7 +30,7 @@ def adjustsizes(skyov, psfov, ov, verbose=0):
     Make more accomodating later...
     """
     if psfov.shape != skyov.shape:
-        print psfov.shape, skyov.shape
+        print(psfov.shape, skyov.shape)
         sys.exit("error: oversampled sky and psf must be same-sized arrays")
     
     if skyov.shape[0]%ov != 0:
@@ -38,12 +38,12 @@ def adjustsizes(skyov, psfov, ov, verbose=0):
 
     fovdet = skyov.shape[0] // ov
     if verbose:
-        print fovdet, "= FOV in detector pixels"
+        print(fovdet, "= FOV in detector pixels")
 
     if fovdet%2 == 1:
         halfdim = (fovdet - 1) // 2
         if verbose:
-            print halfdim, "= halfdim in detector pixels"
+            print(halfdim, "= halfdim in detector pixels")
     else:
         sys.exit("error: unable to deal with even dimensional detector array (yet)")
 
@@ -51,8 +51,8 @@ def adjustsizes(skyov, psfov, ov, verbose=0):
     ipsov = np.ones((U.ips_size*ov, U.ips_size*ov))
 
     if verbose:
-        print "psfov.sum(), skyov.sum() are:",
-        print "%.2e"%psfov.sum(), " and  %.2e"%skyov.sum() # around 0.15 or less for psf tot.
+        print("psfov.sum(), skyov.sum() are:", end=' ')
+        print("%.2e"%psfov.sum(), " and  %.2e"%skyov.sum()) # around 0.15 or less for psf tot.
     # sky tot depends on scene.  Power multiplication theorem applies to
     # the following fftconvolve()
     # Conservation of energy slightly compromised by the "same" mode in the
@@ -109,39 +109,39 @@ def simulate_scenedata( _trials,
         dither_ycenter = [a + b for a, b in zip(_y_dith, y_dith_error_accum)]
   
         if verbose:
-            print "\tPrinting commanded dither, accumulated error, final dither location for verification"
-            print "  "
-            print "\tcommanded X dither", _x_dith
-            print "\tAccumulated X dither error", x_dith_error_accum
-            print "\tdither_xcenter", dither_xcenter      
-            print "  "
-            print "\tcommanded Y dither", _y_dith
-            print "\tAccumulated Y dither error", y_dith_error_accum
-            print "\tdither_ycenter", dither_ycenter
-            print "  "
+            print("\tPrinting commanded dither, accumulated error, final dither location for verification")
+            print("  ")
+            print("\tcommanded X dither", _x_dith)
+            print("\tAccumulated X dither error", x_dith_error_accum)
+            print("\tdither_xcenter", dither_xcenter)      
+            print("  ")
+            print("\tcommanded Y dither", _y_dith)
+            print("\tAccumulated Y dither error", y_dith_error_accum)
+            print("\tdither_ycenter", dither_ycenter)
+            print("  ")
   
         #POSITIONAL ERROR = DITHER + JITTER
-        xjitter = range( _dithers)   #each of the 4 elements is an array of nint jitters
-        yjitter = range( _dithers)   #one set per dither location
+        xjitter = list(range( _dithers))   #each of the 4 elements is an array of nint jitters
+        yjitter = list(range( _dithers))   #one set per dither location
         
         if apply_jitter == 1:
             for i in range( _dithers):
                 xjitter[i], yjitter[i] = U.jitter(nint, osample, random_seed=random_seed)                    
                 if verbose:
-                    print '\t\tx jitter', xjitter[i]
-                    print '\t\ty jitter', yjitter[i]
+                    print('\t\tx jitter', xjitter[i])
+                    print('\t\ty jitter', yjitter[i])
         else:
             xjitter = [[0]*nint]                
             yjitter = [[0]*nint]
 
         xjitter_array = np.array(xjitter)
-        x = range( _dithers)
+        x = list(range( _dithers))
 
         yjitter_array = np.array(yjitter)      
-        y = range( _dithers)
+        y = list(range( _dithers))
 
-        total_pos_error_x = range( _dithers)
-        total_pos_error_y = range( _dithers)
+        total_pos_error_x = list(range( _dithers))
+        total_pos_error_y = list(range( _dithers))
         
         # If one wishes to produced all the dithered datacubes change next line to ...range(_dithers)
         # _dithers number of values of the dither locations will need  to accompany this change.
@@ -151,14 +151,14 @@ def simulate_scenedata( _trials,
             total_pos_error_x[i] = x[i] - _x_dith[i]
             total_pos_error_y[i] = y[i] - _y_dith[i]
             if verbose:
-                print " "
-                print '\t\ttotal positional error in X', total_pos_error_x[i]
-                print '\t\treal X pointing with dither and jitter', x[i]
-                print " "
-                print '\t\ttotal positional error in Y', total_pos_error_y[i]
-                print '\t\treal Y pointing with dither and jitter', y[i] 
-                print " "
-                print '\t\tzip(x[i],y[i])',zip(x[i],y[i])
+                print(" ")
+                print('\t\ttotal positional error in X', total_pos_error_x[i])
+                print('\t\treal X pointing with dither and jitter', x[i])
+                print(" ")
+                print('\t\ttotal positional error in Y', total_pos_error_y[i])
+                print('\t\treal Y pointing with dither and jitter', y[i]) 
+                print(" ")
+                print('\t\tzip(x[i],y[i])',list(zip(x[i],y[i])))
 
             for k,(ii,jj) in enumerate(zip(x[i],y[i])):
 
@@ -170,8 +170,8 @@ def simulate_scenedata( _trials,
                 skyscene_ov_ips_array_sh = U.apply_padding_image(skyscene_ov_ips_array,jj-dither_ycenter[i],ii-dither_xcenter[i], fov, osample)
 
                 if verbose:
-                    print  "\t\tinfo", (int(dither_xcenter[i]-(dither_xcenter[i]//osample)*float(osample)), int(osample-(dither_xcenter[i]-(dither_xcenter[i]//osample)*osample)))
-                    print  "\t\tinfo", (int(dither_ycenter[i]-(dither_ycenter[i]//osample)*float(osample)), int(osample-(dither_ycenter[i]-(dither_ycenter[i]//osample)*osample)))
+                    print("\t\tinfo", (int(dither_xcenter[i]-(dither_xcenter[i]//osample)*float(osample)), int(osample-(dither_xcenter[i]-(dither_xcenter[i]//osample)*osample))))
+                    print("\t\tinfo", (int(dither_ycenter[i]-(dither_ycenter[i]//osample)*float(osample)), int(osample-(dither_ycenter[i]-(dither_ycenter[i]//osample)*osample))))
                 
                 # magic pixel bookkeeping on the image
                 im = np.pad(skyscene_ov_ips_array_sh,
@@ -198,8 +198,10 @@ def simulate_scenedata( _trials,
                 counts_array_persec = rebinned_array / rebinned_ips_flat
 
 
-				# every integration should have independent noise, therefore the random_seed is altered
-                ramp = U.create_ramp(counts_array_persec, fov, ngroups, utr,verbose=verbose, include_noise=include_detection_noise,random_seed=random_seed+k*2 )
+                # every integration should have independent noise, therefore the random_seed is altered
+                ramp = U.create_ramp(counts_array_persec, fov, ngroups, utr, verbose=verbose, 
+                                     include_noise=include_detection_noise,
+                                     random_seed=random_seed+k*2 )
                 #fits.writeto('ramp.fits',ramp, clobber = True)
 
                 pflat = U.get_flatfield((fov,fov),flatfield_dir,uniform=uniform_flatfield,random_seed=random_seed,overwrite=overwrite_flatfield)
@@ -208,9 +210,9 @@ def simulate_scenedata( _trials,
 
                 cube[k,:,:] = integration1    
                 if verbose:
-                    print '\t\tmax pixel counts', cube[k,:,:].max()
-                    print " "                   
-				
+                    print('\t\tmax pixel counts', cube[k,:,:].max())
+                    print(" ")                   
+                
   
             """
             print '\t_cubename', _cubename
@@ -218,7 +220,7 @@ def simulate_scenedata( _trials,
             print '\tstr(i)', str(i)
             """
             outfile = _cubename+str(p)+str(i)+".fits"
-            print 'creating', _cubename+str(p)+str(i)+'.fits'
+            print('creating', _cubename+str(p)+str(i)+'.fits')
 
             (year, month, day, hour, minute, second, weekday, DOY, DST) =  time.gmtime()
 
@@ -283,15 +285,15 @@ def simulate_scenedata( _trials,
                     printhdr[keyw] = ( psf_hdr[keyw], 'FROM PSFHEADER: '+np.str(psf_hdr.comments[keyw]))              
   
             fitsobj.append( hdu )
-            fitsobj.writeto(os.path.join(outDir,outfile), clobber = True)
+            fitsobj.writeto(os.path.join(outDir,outfile), overwrite = True)
             fitsobj.close()
             if verbose:
-                print "\nPeak pixel and total e- in each slice:"
+                print("\nPeak pixel and total e- in each slice:")
 
         if verbose:
             for i in range(cube.shape[0]):
-                print i, " %.1e"%cube[i,:,:].max(), " %.3e"%cube[i,:,:].sum()
-            print ""
+                print(i, " %.1e"%cube[i,:,:].max(), " %.3e"%cube[i,:,:].sum())
+            print("")
 
-            print "up-the-ramp %d"%utr, 
-            print "\nTotal e- in cube:", "%.2e   "%cube.sum()
+            print("up-the-ramp %d"%utr, end=' ') 
+            print("\nTotal e- in cube:", "%.2e   "%cube.sum())

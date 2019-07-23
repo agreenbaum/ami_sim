@@ -28,8 +28,10 @@ It requires WebbPSF and pysynphot python modules and supporting data files.
 # driver_scene  -  creates simulated data of sky.fits using psf.fits, e.g.:
 ---------------
 
-> python driver_scene.py -t simulatedData/ -o 0 -utr 0 -f \
-    F430M -p psf.fits -s sky.fits -O 11 -I 10 -G 2 [-c 0]  -cr 2.1e6
+> python driver_scene.py -t delmoi_scene -o 1  -utr 0  -f F430M \
+                         -p psf_f430m_oversampled.fits -s tgt_f430m_oversampled.fits \
+                         -os 11 -I 4  -G 7  -c 1  -cr 1e10   -v 1\
+                         --random_seed 42
     
 
 	
