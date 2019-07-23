@@ -52,7 +52,8 @@ from astropy.io import fits
 from astropy.io.fits import getheader
 import webbpsf as wp
 import pysynphot
-from poppy import specFromSpectralType
+#rom poppy import specFromSpectralType
+from webbpsf import specFromSpectralType
 import time
 
 import pyami.simcode.utils as U   
@@ -63,16 +64,28 @@ def generate_starPSF(FILTER=None, fov=None, osample=None, spectraltype="A0V"):
     niriss = wp.NIRISS()
     niriss.filter = FILTER
     niriss.pupil_mask = 'MASK_NRM'
-    niriss.pupilopd = ("OPD_RevV_niriss_162.fits", 3)
-    niriss.pixelscale = U.pixscl
+
+    # set the WFE file to use...
+    #iriss.pupilopd = ("OPD_RevV_niriss_162.fits", 3) old webbpsf
+    path_to_webbpsf_data = wp.utils.get_webbpsf_data_path()
+    opdfile = "OPD_RevW_ote_for_NIRISS_requirements.fits.gz"
+    opd = os.path.join(path_to_webbpsf_data,"NIRISS", "OPD", opdfile) 
+    opdslice = 3 # anywhere between 0 and 9:  10 realizations...
+    niriss.pupilopd = (opd, opdslice)
+
+    fov_pixels = fov # handoff no refactor
+    oversample = osample # handoff no refactor
+
+    niriss.pixelscale = U.pixscl # handoff no refactor
     src = specFromSpectralType(spectraltype)
 
     
     #Create an oversized array for star PSF. 
-    psf_fits = niriss.calcPSF(fov_pixels=fov + 4,oversample=osample,source=src,rebin=False,clobber=True)
+    #sf_fits = niriss.calcPSF(fov_pixels=fov + 4,oversample=osample,source=src,rebin=False,clobber=True) old call webbpsf
+    psf_fits = niriss.calc_psf(oversample=oversample, source=src, fov_pixels=fov_pixels+4) # +4 because of jittering?
     psf_array = psf_fits[0].data
     psf_header = psf_fits[0].header
-    print psf_array.sum(), 'sum of star psf'  
+    print(psf_array.sum(), 'sum of star psf')  
     return psf_array, psf_header
 
 
@@ -95,9 +108,9 @@ def simulate_skydata(_trials, _binarystar_array, _cubename, _dithers,  _x_dith, 
     flux = 10**(-(starmag-magzeropoint)/2.5) # detected e-/sec
     if False:
         flux = 1.0e6/(U.tframe*0.14)
-        print "hardwired debug flux e = %.2e detected e- / sec" % flux
+        print("hardwired debug flux e = %.2e detected e- / sec" % flux)
         ngroups, nint = 5, 3
-        print "ngroups, nint", ngroups, nint
+        print("ngroups, nint", ngroups, nint)
 
     cube = np.zeros((nint, int(fov), int(fov)), np.float64)
     ipsarray_big = np.ones((U.ips_size*osample, U.ips_size*osample))
@@ -132,18 +145,18 @@ def simulate_skydata(_trials, _binarystar_array, _cubename, _dithers,  _x_dith, 
     
         #POSITIONAL ERROR = DITHER + JITTER
     
-        xjitter = range( _dithers)   #each of the 4 elements is an array of NINT jitters
-        yjitter = range( _dithers)   #one set per dither location
+        xjitter = list(range( _dithers))   #each of the 4 elements is an array of NINT jitters
+        yjitter = list(range( _dithers))   #one set per dither location
         for i in range( _dithers):
             xjitter[i], yjitter[i] = U.jitter(nint, osample)
             #print '\t\tx jitter', xjitter[i]
             #print '\t\ty jitter', yjitter[i]
         xjitter_array = np.array(xjitter)
-        x = range( _dithers)
+        x = list(range( _dithers))
         yjitter_array = np.array(yjitter)      
-        y = range( _dithers)
-        total_pos_error_x = range( _dithers)
-        total_pos_error_y = range( _dithers)
+        y = list(range( _dithers))
+        total_pos_error_x = list(range( _dithers))
+        total_pos_error_y = list(range( _dithers))
         for i in range( _dithers):
             x[i] = dither_xcenter[i] + xjitter_array[i]
             y[i] = dither_ycenter[i] + yjitter_array[i] 
@@ -207,12 +220,12 @@ def simulate_skydata(_trials, _binarystar_array, _cubename, _dithers,  _x_dith, 
                 # Do a double correlation subtraction or equivalent...
                 integration = (U.create_integration(ramp) - U.darkcurrent - U.background) * pflat
                 cube[i_int,:,:] = integration
-                print 'Integration[%d],'%i_int,  "%.1e e-" % cube[i_int,:,:].sum() 
+                print('Integration[%d],'%i_int,  "%.1e e-" % cube[i_int,:,:].sum()) 
                 #fits.writeto(tmpDir+'exp1.fits', integration, clobber = True)
 
    
             outfile = _cubename+str(p)+str(i)+".fits"
-            print '\tcreated', _cubename+str(p)+str(i)+'.fits'
+            print('\tcreated', _cubename+str(p)+str(i)+'.fits')
             (year, month, day, hour, minute, second, weekday, DOY, DST) =  time.gmtime()
             fitsobj = fits.HDUList()
             hdu = fits.PrimaryHDU(  )
@@ -270,14 +283,14 @@ def simulate_skydata(_trials, _binarystar_array, _cubename, _dithers,  _x_dith, 
             printhdr['DATE'] = '%4d-%02d-%02dT%02d:%02d:%02d' %  (year, month, day, hour, minute, second), 'Date of calculation'
             hdu.data = cube
             fitsobj.append( hdu )
-            fitsobj.writeto(outDir+outfile, clobber = True)
+            fitsobj.writeto(outDir+outfile, overwrite = True)
             fitsobj.close()
 
 
-            print "\nPeak pixel and total e- in each slice"
+            print("\nPeak pixel and total e- in each slice")
             for i in range(cube.shape[0]):
-                print "%2d"%i, " %.2e"%(cube[i,:,:].max()), " %.2e"%(cube[i,:,:].sum())
-            print ""
+                print("%2d"%i, " %.2e"%(cube[i,:,:].max()), " %.2e"%(cube[i,:,:].sum()))
+            print("")
 
-            print "up-the-ramp %d"%utr, 
-            print "\nTotal e- in cube:", "%.2e   "%cube.sum()
+            print("up-the-ramp %d"%utr, end=' ') 
+            print("\nTotal e- in cube:", "%.2e   "%cube.sum())

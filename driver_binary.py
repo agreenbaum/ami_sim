@@ -15,7 +15,7 @@ import pyami.simcode.utils as U
 
 def main(argv, debug=False):
     if debug:
-        print "python driver_binary.py F430M 6.0 2e7 -t simulatedData/ -o 1 -fr 0.16 -dx 2.0 -dy 2.0"
+        print("python driver_binary.py F430M 6.0 2e7 -t simulatedData/ -o 1 -fr 0.16 -dx 2.0 -dy 2.0")
 
     parser = argparse.ArgumentParser(description="This script provides a basic example of how to use the NIRISS-AMI ETC and binary simulation code.")
     parser.add_argument('-t','--targetDir',  type=str, default='niriss-ami_out/', help='path (relative to home directory) to output directory for file writing')
@@ -29,7 +29,7 @@ def main(argv, debug=False):
     parser.add_argument('filt', type=str, help='filter to be used, must be one of F277W,F380M,F430M,F480M', choices=["F277W", "F380M", "F430M", "F480M"])
     parser.add_argument('targetMagnitude', type=float, help='Target apparent magnitude in selected filter')
     parser.add_argument('totalElectrons', type=float, help='Requested total number of collected electrons')
-    parser.add_argument('-O','--oversample', type=int, default='11', help='detector pixel oversampling (odd)', choices=range(1,12,2))
+    parser.add_argument('-O','--oversample', type=int, default='11', help='detector pixel oversampling (odd)', choices=list(range(1,12,2)))
 	
     
     args = parser.parse_args(sys.argv[1:])
@@ -73,8 +73,8 @@ def main(argv, debug=False):
 
         report, params = etc.generatePSF(filt=filt, fov=31, osample=3, cr=etc.cr_from_mag(mag_t, U.ZP[filt]), tot_e=tot_e, sat_e=sat_e, SRC = sptype, return_params=1, DATADIR=pyamiDataDir)
         ngroups, nint, nint_ceil = params;
-        print report
-        print "\tTarget magnitude is %.2f, total  number of detected photons is %.1e\n" % (MAG_T, TOT_E)
+        print(report)
+        print("\tTarget magnitude is %.2f, total  number of detected photons is %.1e\n" % (MAG_T, TOT_E))
 
         #----------------------
         if debug:
@@ -101,7 +101,7 @@ def main(argv, debug=False):
             fov = U.amisubfov
             tframe = 0.0745 # SUB80 NISRAPID
             dim = fov/2.0
-            print "oversampling set in top level driver to %d" % osample
+            print("oversampling set in top level driver to %d" % osample)
             trials = 1
         
             #define offsets of the companion from the star at the center
@@ -121,20 +121,33 @@ def main(argv, debug=False):
             # FEEDER FOR SIMULATION - star_array
             #f ( (not os.path.isfile(starArrayFile)) or (overwrite == 1) ) :
             if not os.path.isfile(starArrayFile):
-                print "Driver creating or overwriting PSF file", starArrayFile
+                print("Driver creating or overwriting PSF file", starArrayFile)
                 star_array,star_header = binsim.generate_starPSF(FILTER=filt,fov=fov, osample=osample, spectraltype=sptype)
                 fits.PrimaryHDU(data=star_array, header=star_header).writeto(starArrayFile, clobber = True)
             else:
-                print "Driver found appropriate PSF file on disk:", starArrayFile
+                print("Driver found appropriate PSF file on disk:", starArrayFile)
                 star_array,star_header = fits.getdata(starArrayFile,header=True)
 
-            calstar_array = star_array[((fov+4)/2-dim)*osample:((fov+4)/2+dim)*osample,((fov+4)/2-dim)*osample:((fov+4)/2+dim)*osample]
+            """
+            print("dim", type(dim), dim, 
+                  "\n(fov+4)/2-dim", type((fov+4)/2-dim),  (fov+4)/2-dim,
+                  "\nosample", type(osample), osample,
+                  "\n(fov+4)/2+dim", type((fov+4)/2+dim), (fov+4)/2+dim
+                  )
+            dim <class 'float'> 40.0 
+            (fov+4)/2-dim <class 'float'> 2.0 
+            osample <class 'int'> 3 
+            (fov+4)/2+dim <class 'float'> 82.0
+            """
+            dim = int(dim)
+
+            calstar_array = star_array[((fov+4)//2-dim)*osample:((fov+4)//2+dim)*osample,((fov+4)//2-dim)*osample:((fov+4)//2+dim)*osample]
 
             # --
             # DEFINE DITHER POINTING in det pixels
             #
             ipsoffset = U.ips_size//2 - (U.amisubfov)//2
-            print "ipsoffset %d = U.ips_size//2 %d - (U.amisubfov)//2 %d" % (ipsoffset, U.ips_size//2, (U.amisubfov)//2)
+            print("ipsoffset %d = U.ips_size//2 %d - (U.amisubfov)//2 %d" % (ipsoffset, U.ips_size//2, (U.amisubfov)//2))
 
             #_dith = [17,57,17,53]; # see email Deepashri 2016-02-10
             #_dith = [41,41,41,41]; # Anand Alex Centering
@@ -161,6 +174,13 @@ def main(argv, debug=False):
             a = 2 * osample
             b = (2 + fov) * osample 
 
+            print("a", type(a), a, "b", type(b), b, 
+                  "offset_x", type(offset_x), offset_x,
+                  "offset_y", type(offset_y), offset_y,
+                  "*********")
+            offset_x = int(offset_x)
+            offset_y = int(offset_y)
+
             # FEEDER FOR SIM!!!
             try: 
                 binarystar_array = star_array[a:b, a:b] + fluxratio *  star_array[a+offset_y:b+offset_y, a+offset_x:b+offset_x]
@@ -180,13 +200,13 @@ def main(argv, debug=False):
             binsim.simulate_skydata(trials, calstar_array   , "ccube", dithers, x_dith, y_dith, ngroups, nint_ceil,
                 filt=filt, outDir = outDir, tmpDir=tmpDir, **kwargs)
 
-            print """
+            print("""
 	The number of e- in the data cube may be less than the requested number of photons (%.2e) for
 	bright objects by up to a fraction ~1/ngroups of the requested number.  This is because
 	of complications due to missing the RESET-READ frame in downlinked data.
 	Increase the requested number of photons  until your data cube contains the required
 	number of photons.
-	""" % tot_e
+	""" % tot_e)
 
     
 if __name__ == "__main__":
