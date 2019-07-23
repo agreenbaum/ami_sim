@@ -128,7 +128,7 @@ def main(argv, debug=False):
                 print("Driver found appropriate PSF file on disk:", starArrayFile)
                 star_array,star_header = fits.getdata(starArrayFile,header=True)
 
-            """
+            """ python 2to3 2019
             print("dim", type(dim), dim, 
                   "\n(fov+4)/2-dim", type((fov+4)/2-dim),  (fov+4)/2-dim,
                   "\nosample", type(osample), osample,
@@ -174,10 +174,12 @@ def main(argv, debug=False):
             a = 2 * osample
             b = (2 + fov) * osample 
 
+            """ python 2to3 2019
             print("a", type(a), a, "b", type(b), b, 
                   "offset_x", type(offset_x), offset_x,
                   "offset_y", type(offset_y), offset_y,
                   "*********")
+            """
             offset_x = int(offset_x)
             offset_y = int(offset_y)
 
