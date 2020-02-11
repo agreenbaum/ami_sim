@@ -31,6 +31,7 @@ def adjustsizes(skyov, psfov, ov, verbose=0):
     """
     if psfov.shape != skyov.shape:
         print( psfov.shape, skyov.shape)
+
         sys.exit("error: oversampled sky and psf must be same-sized arrays")
     
     if skyov.shape[0]%ov != 0:
@@ -125,6 +126,7 @@ def simulate_scenedata( _trials,
         yjitter = [[0]*_dithers]
         #xjitter = list(range( _dithers))   #each of the 4 elements is an array of nint jitters
         #yjitter = list(range( _dithers))   #one set per dither location
+
         
         if apply_jitter == 1:
             for i in range( _dithers):
@@ -138,15 +140,12 @@ def simulate_scenedata( _trials,
 
         xjitter_array = np.array(xjitter)
         x = [[0]*_dithers]
-        #x = list(range( _dithers))
 
         yjitter_array = np.array(yjitter)      
         y = [[0]*_dithers]
-        #y = list(range( _dithers))
 
         #total_pos_error_x = list(range( _dithers))
         total_pos_error_x = [[0]*_dithers]
-        #total_pos_error_y = list(range( _dithers))
         total_pos_error_y = [[0]*_dithers]
         
         # If one wishes to produced all the dithered datacubes change next line to ...range(_dithers)
@@ -165,7 +164,7 @@ def simulate_scenedata( _trials,
                 print( '\t\treal Y pointing with dither and jitter', y[i] )
                 print( " ")
                 print( '\t\tzip(x[i],y[i])',zip(x[i],y[i]))
-
+                
             for k,(ii,jj) in enumerate(zip(x[i],y[i])):
 
                 ii = np.int(ii)
@@ -176,8 +175,11 @@ def simulate_scenedata( _trials,
                 skyscene_ov_ips_array_sh = U.apply_padding_image(skyscene_ov_ips_array,jj-dither_ycenter[i],ii-dither_xcenter[i], fov, osample)
 
                 if verbose:
-                    print(  "\t\tinfo", (int(dither_xcenter[i]-(dither_xcenter[i]//osample)*float(osample)), int(osample-(dither_xcenter[i]-(dither_xcenter[i]//osample)*osample))))
-                    print(  "\t\tinfo", (int(dither_ycenter[i]-(dither_ycenter[i]//osample)*float(osample)), int(osample-(dither_ycenter[i]-(dither_ycenter[i]//osample)*osample))))
+
+                    print(  "\t\tinfo", (int(dither_xcenter[i]-(dither_xcenter[i]//osample)*float(osample)), 
+                                         int(osample-(dither_xcenter[i]-(dither_xcenter[i]//osample)*osample))))
+                    print(  "\t\tinfo", (int(dither_ycenter[i]-(dither_ycenter[i]//osample)*float(osample)), 
+                                         int(osample-(dither_ycenter[i]-(dither_ycenter[i]//osample)*osample))))
                 
                 # magic pixel bookkeeping on the image
                 im = np.pad(skyscene_ov_ips_array_sh,
@@ -204,8 +206,10 @@ def simulate_scenedata( _trials,
                 counts_array_persec = rebinned_array / rebinned_ips_flat
 
 
-				# every integration should have independent noise, therefore the random_seed is altered
-                ramp = U.create_ramp(counts_array_persec, fov, ngroups, utr,verbose=verbose, include_noise=include_detection_noise,random_seed=random_seed+k*2 )
+                # every integration should have independent noise, therefore the random_seed is altered
+                ramp = U.create_ramp(counts_array_persec, fov, ngroups, utr, verbose=verbose, 
+                                     include_noise=include_detection_noise,
+                                     random_seed=random_seed+k*2 )
                 #fits.writeto('ramp.fits',ramp, clobber = True)
 
                 pflat = U.get_flatfield((fov,fov),flatfield_dir,uniform=uniform_flatfield,random_seed=random_seed,overwrite=overwrite_flatfield)
@@ -225,7 +229,6 @@ def simulate_scenedata( _trials,
             """
             outfile = _cubename+str(p)+str(i)+".fits"
             print( 'creating', _cubename+str(p)+str(i)+'.fits')
-
             (year, month, day, hour, minute, second, weekday, DOY, DST) =  time.gmtime()
 
             fitsobj = fits.HDUList()
@@ -291,7 +294,7 @@ def simulate_scenedata( _trials,
                     printhdr[keyw] = ( psf_hdr[keyw], 'FROM PSFHEADER: '+np.str(psf_hdr.comments[keyw]))              
   
             fitsobj.append( hdu )
-            fitsobj.writeto(os.path.join(outDir,outfile), clobber = True)
+            fitsobj.writeto(os.path.join(outDir,outfile), overwrite = True)
             fitsobj.close()
             if verbose:
                 print( "\nPeak pixel and total e- in each slice:")
@@ -303,3 +306,4 @@ def simulate_scenedata( _trials,
 
             print( "up-the-ramp %d"%utr, )
             print( "\nTotal e- in cube:", "%.2e   "%cube.sum())
+

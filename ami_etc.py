@@ -50,8 +50,8 @@ def main(argv):
                                       tot_e=tot_e, sat_e=sat_e, SRC = sptype, return_params=1,\
                                       DATADIR=pyamiDataDir)
     ngroups, nint, nint_ceil = params # not needed here...
-    print report
-    print "\tTarget magnitude is %.2f, total  number of detected photons is %.0e\n" % (MAG_T, TOT_E)
+    print(report)
+    print("\tTarget magnitude is %.2f, total  number of detected photons is %.0e\n" % (MAG_T, TOT_E))
         
 
 if __name__ == "__main__":

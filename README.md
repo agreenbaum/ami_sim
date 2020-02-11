@@ -28,10 +28,12 @@ It requires WebbPSF and pysynphot python modules and supporting data files.
 # driver_scene  -  creates simulated data of sky.fits using psf.fits, e.g.:
 ---------------
 
-> python driver_scene.py -t simulatedData/ -o 0 -utr 0 -f F430M -p [absolute path to psf file]/psf.fits -s [absolute path to psf file]/sky.fits -os 11 -I 10 -G 2 [-c 0]  -cr 2.1e6
-    
+> python driver_scene.py -t simulatedData/ -o 0 -utr 0 -f F430M \
+                         -p [absolute path to psf file]/psf.fits \
+                         -s [absolute path to psf file]/sky.fits \
+                         -os 11 -I 10 -G 2 [-c 0]  -cr 2.1e6  -v 1\
+                         --random_seed 42
 
-	
 You need to create a directory (eg simulatedData in the above example) in your home directory for the saved files. You also need to point to: 
 
 	- Absolute path to the sky scene (eg sky.fits, normalized on-the-fly to cr in photons/s on 25m^2 in filter bandpass)
